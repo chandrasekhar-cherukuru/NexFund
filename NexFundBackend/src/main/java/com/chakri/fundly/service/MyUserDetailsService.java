@@ -24,13 +24,12 @@ public class MyUserDetailsService implements UserDetailsService {
 
         logger.debug("Attempting to load user by username: {}", username);
 
-        // Find user by username
-        Users user = repo.findByUsername(username);
-
-        if (user == null) {
-            logger.warn("User not found with username: {}", username);
-            throw new UsernameNotFoundException("User not found with username: " + username);
-        }
+        // ✅ FIXED: Add .orElseThrow() to handle Optional
+        Users user = repo.findByUsername(username)
+                .orElseThrow(() -> {
+                    logger.warn("User not found with username: {}", username);
+                    return new UsernameNotFoundException("User not found with username: " + username);
+                });
 
         logger.debug("User found: {} with authProvider: {}", username, user.getAuthProvider());
 

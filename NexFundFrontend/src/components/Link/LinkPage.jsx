@@ -375,19 +375,7 @@ const LinkPage = () => {
       <div className="max-w-2xl mx-auto">
         
         {/* Debug Panel */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg text-xs">
-            <p className="text-yellow-800 dark:text-yellow-300 mb-2 font-bold">🎯 CALLING YOUR EXACT BACKEND URLS!</p>
-            <p className="text-yellow-700 dark:text-yellow-200"><strong>🆔 Fundraiser ID:</strong> {fundraiser.id}</p>
-            <p className="text-yellow-700 dark:text-yellow-200"><strong>📂 Type:</strong> {fundraiser.type} | <strong>🗄️ Backend:</strong> {fundraiser.backendTable}</p>
-            <p className="text-yellow-700 dark:text-yellow-200"><strong>🔗 EXACT URL:</strong> {
-              fundraiser.backendTable === 'events' 
-                ? `http://localhost:8080/api/upi/event/${fundraiser.id}/qr` 
-                : `http://localhost:8080/api/upi/gift/${fundraiser.id}/qr`
-            }</p>
-            <p className="text-green-700 dark:text-green-300 font-bold">✅ Same format as your working Postman requests!</p>
-          </div>
-        )}
+        
 
         {/* Header */}
         <div className="flex justify-between items-start mb-6">

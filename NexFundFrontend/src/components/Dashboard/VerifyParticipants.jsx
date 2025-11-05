@@ -5,6 +5,8 @@ import { Users, Calendar, IndianRupee, Download, Search, Filter, CheckCircle, Cl
 import Navbar from '../Layout/Navbar';
 import toast from 'react-hot-toast';
 import * as api from '../../services/api.js';
+import * as XLSX from 'xlsx';
+
 
 const VerifyParticipants = () => {
   const { user } = useAuth();
@@ -52,8 +54,7 @@ const VerifyParticipants = () => {
     const pendingCount = totalParticipants - verifiedCount;
     
     setStats({ totalParticipants, totalAmount, pendingCount, verifiedCount });
-    
-    console.log('📊 Stats updated:', { totalParticipants, verifiedCount, pendingCount, finalVerificationsSize: finalVerifications.size });
+    console.log('📊 Stats updated:', { totalParticipants, verifiedCount, pendingCount });
   };
 
   const loadParticipants = async () => {
@@ -75,7 +76,6 @@ const VerifyParticipants = () => {
       
       setParticipants(response.data || []);
       
-      // Load final verifications after participants are loaded
       await loadFinalVerifications(response.data || []);
       
       console.log('✅ Participants loaded:', (response.data || []).length);
@@ -102,7 +102,6 @@ const VerifyParticipants = () => {
       
       const verifiedSet = new Set();
       
-      // Check each participant individually for final verification
       for (const participant of participantList) {
         try {
           const response = await api.checkFinalVerification(participant.id);
@@ -156,7 +155,6 @@ const VerifyParticipants = () => {
     setFilteredParticipants(filtered);
   };
 
-  // 🚨 **CORRECTED VERIFICATION FUNCTION**
   const handleFinalVerification = async (participantId, participantName) => {
     if (!window.confirm(`Are you sure you want to FINALLY VERIFY "${participantName}"?`)) {
       return;
@@ -165,14 +163,12 @@ const VerifyParticipants = () => {
     try {
       console.log('🔄 Attempting backend verification for:', participantId);
       
-      // Try backend API call with proper request body
       const response = await api.finallyVerifyParticipant(participantId, {
         notes: `Finally verified by ${user?.username || user?.email} on ${new Date().toISOString()}`
       });
       
       console.log('✅ Backend verification successful:', response.data);
       
-      // Update state immediately after successful API call
       setFinalVerifications(prev => {
         const newSet = new Set(prev);
         newSet.add(participantId);
@@ -182,14 +178,11 @@ const VerifyParticipants = () => {
       
       toast.success(`${participantName} has been finally verified successfully!`);
       
-      // Optional: Verify the save worked by checking again after a delay
       setTimeout(async () => {
         try {
           const checkResponse = await api.checkFinalVerification(participantId);
           if (checkResponse.data.isFinallyVerified) {
             console.log('✅ Confirmed: Participant verified in database!');
-          } else {
-            console.log('⚠️ Warning: Participant not found in verification check');
           }
         } catch (err) {
           console.log('⚠️ Could not verify database save:', err);
@@ -198,23 +191,12 @@ const VerifyParticipants = () => {
       
     } catch (error) {
       console.error('❌ Backend verification failed:', error);
-      console.error('❌ Error details:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message
-      });
       
       let errorMessage = 'Failed to verify participant';
       
       if (error.response?.status === 400 && error.response?.data?.message) {
-        // Handle specific error messages from backend
         errorMessage = error.response.data.message;
-        
-        if (errorMessage.includes('You can only verify participants from your own fundraisers')) {
-          toast.error('⚠️ ' + errorMessage + '\n\nNote: This may be due to ownership validation in the backend.');
-        } else {
-          toast.error(errorMessage);
-        }
+        toast.error(errorMessage);
       } else if (error.response?.status === 403) {
         errorMessage = 'Access denied. You can only verify participants from your own fundraisers.';
         toast.error(errorMessage);
@@ -227,14 +209,6 @@ const VerifyParticipants = () => {
       } else {
         toast.error(errorMessage);
       }
-      
-      // Log full error for debugging
-      console.log('🚨 Full error response for debugging:', {
-        participantId,
-        participantName,
-        currentUser: user?.username || user?.email,
-        error: error.response
-      });
     }
   };
 
@@ -242,58 +216,97 @@ const VerifyParticipants = () => {
     const finallyVerifiedParticipants = filteredParticipants.filter(p => finalVerifications.has(p.id));
     
     if (finallyVerifiedParticipants.length === 0) {
-      toast.error('No finally verified participants to download. Please verify participants first.');
+      toast.error('No finally verified participants to download.');
       return;
     }
 
-    const csvData = [
-      ['FINALLY VERIFIED PARTICIPANTS REPORT'],
-      ['Generated on:', new Date().toLocaleString()],
-      ['Total Finally Verified:', finallyVerifiedParticipants.length],
-      ['Total Verified Amount:', `₹${finallyVerifiedParticipants.reduce((sum, p) => sum + parseFloat(p.amountPaid || 0), 0).toLocaleString()}`],
-      [''],
-      ['Participant Name', 'UTR Number', 'Amount Paid', 'Email', 'Fundraiser Title', 'Fundraiser Type', 'Verified At', 'Status']
-    ];
-
-    finallyVerifiedParticipants.forEach(participant => {
-      csvData.push([
-        participant.participantName || '',
-        participant.utrNumber || '',
-        `₹${participant.amountPaid || 0}`,
-        participant.email || 'N/A',
-        participant.fundraiserTitle || '',
-        participant.fundraiserType || '',
-        new Date(participant.verifiedAt || Date.now()).toLocaleString(),
-        'Finally Verified'
-      ]);
-    });
-
-    const csvContent = csvData.map(row => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `finally_verified_participants_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-    
-    toast.success('Finally verified participants report downloaded successfully');
+    downloadExcel(finallyVerifiedParticipants);
   };
 
-  const formatDateTime = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString('en-IN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const downloadExcel = (data) => {
+    try {
+      const workbook = XLSX.utils.book_new();
+
+      // Sort data alphabetically
+      const sortedData = [...data].sort((a, b) => 
+        (a.participantName || '').localeCompare(b.participantName || '')
+      );
+
+      const eventName = sortedData.length > 0 ? sortedData[0].fundraiserTitle : 'Report';
+      const creatorName = user?.username || user?.email || 'Unknown';
+
+      // === SHEET 1: REPORT ===
+      const reportData = [];
+      
+      // Header Section
+      reportData.push([eventName]);
+      reportData.push([`Created by: ${creatorName}`]);
+      reportData.push([`Generated on: ${new Date().toLocaleString()}`]);
+      reportData.push([]);
+      
+      // Column Headers
+      reportData.push(['S.No', 'Participant Name', 'UTR Number', 'Email', 'Amount (₹)', 'Verified']);
+      
+      // Add participant rows with proper formatting
+      sortedData.forEach((p, index) => {
+        reportData.push([
+          index + 1,
+          p.participantName || '',
+          p.utrNumber || '',
+          p.email || 'N/A',
+          parseFloat(p.amountPaid || 0),
+          finalVerifications.has(p.id) ? 'Yes' : 'No'
+        ]);
+      });
+
+      // Summary Section
+      reportData.push([]);
+      reportData.push(['SUMMARY']);
+      reportData.push(['Total Participants', sortedData.length]);
+      
+      const totalAmount = sortedData.reduce((sum, p) => sum + parseFloat(p.amountPaid || 0), 0);
+      reportData.push(['Total Amount Collected', totalAmount]);
+      reportData.push(['Average per Participant', (totalAmount / sortedData.length).toFixed(2)]);
+
+      const reportSheet = XLSX.utils.aoa_to_sheet(reportData);
+      
+      // Set column widths
+      reportSheet['!cols'] = [
+        { wch: 5 },      // S.No
+        { wch: 25 },     // Participant Name
+        { wch: 18 },     // UTR Number
+        { wch: 32 },     // Email
+        { wch: 15 },     // Amount
+        { wch: 10 }      // Verified
+      ];
+
+      XLSX.utils.book_append_sheet(workbook, reportSheet, 'Report');
+
+      // === SHEET 2: SUMMARY ONLY ===
+      const summaryData = [
+        ['Event Report Summary'],
+        [],
+        ['Event Name', eventName],
+        ['Creator', creatorName],
+        ['Generated', new Date().toLocaleString()],
+        [],
+        ['Total Participants', sortedData.length],
+        ['Total Amount', totalAmount],
+        ['Average Amount', (totalAmount / sortedData.length).toFixed(2)],
+      ];
+
+      const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+      summarySheet['!cols'] = [{ wch: 25 }, { wch: 40 }];
+      XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+
+      const fileName = `${eventName.replace(/\s+/g, '_')}_report_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+      toast.success('Report downloaded successfully! ✅');
+      console.log('✅ Excel downloaded successfully');
+    } catch (error) {
+      console.error('❌ Excel download error:', error);
+      toast.error('Failed to download report');
+    }
   };
 
   const getTypeColor = (type) => {
@@ -312,15 +325,15 @@ const VerifyParticipants = () => {
   const getVerificationStatusBadge = (participantId) => {
     if (finalVerifications.has(participantId)) {
       return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
-          <CheckCircle className="h-3 w-3 mr-1" />
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
+          <CheckCircle className="h-4 w-4 mr-1" />
           Finally Verified
         </span>
       );
     } else {
       return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300">
-          <AlertCircle className="h-3 w-3 mr-1" />
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300">
+          <Clock className="h-4 w-4 mr-1" />
           Pending Final Verification
         </span>
       );
@@ -349,63 +362,54 @@ const VerifyParticipants = () => {
           <p className="text-gray-600 dark:text-gray-400">
             {fundraiserId ? 'Participants for selected fundraiser' : 'All verified participants from your fundraisers'}
           </p>
-          
-          {/* Debug Info */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-2 p-2 bg-blue-100 dark:bg-blue-900/30 rounded text-xs text-blue-800 dark:text-blue-300">
-              <strong>Debug:</strong> Loaded {participants.length} participants, {finalVerifications.size} finally verified
-              <br />
-              <strong>Finally Verified IDs:</strong> {Array.from(finalVerifications).join(', ') || 'None'}
-            </div>
-          )}
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Participants</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.totalParticipants}</p>
+              </div>
+              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                 <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Participants</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalParticipants}</p>
-              </div>
             </div>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Finally Verified</p>
+                <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">{stats.verifiedCount}</p>
+              </div>
+              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
                 <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Finally Verified</p>
-                <p className="text-2xl font-bold text-green-900 dark:text-green-300">{stats.verifiedCount}</p>
-              </div>
             </div>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pending</p>
+                <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400 mt-2">{stats.pendingCount}</p>
+              </div>
+              <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
                 <AlertCircle className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pending</p>
-                <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-300">{stats.pendingCount}</p>
-              </div>
             </div>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                <IndianRupee className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div className="ml-4">
+            <div className="flex items-center justify-between">
+              <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Amount</p>
-                <p className="text-2xl font-bold text-purple-900 dark:text-purple-300">₹{stats.totalAmount.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-2">₹{stats.totalAmount.toLocaleString()}</p>
+              </div>
+              <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                <IndianRupee className="h-6 w-6 text-purple-600 dark:text-purple-400" />
               </div>
             </div>
           </div>
@@ -461,10 +465,10 @@ const VerifyParticipants = () => {
             <button
               onClick={handleDownloadReport}
               disabled={stats.verifiedCount === 0}
-              className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium whitespace-nowrap"
             >
               <Download className="h-4 w-4" />
-              <span>Download Final Report ({stats.verifiedCount})</span>
+              <span>Download Report</span>
             </button>
           </div>
         </div>

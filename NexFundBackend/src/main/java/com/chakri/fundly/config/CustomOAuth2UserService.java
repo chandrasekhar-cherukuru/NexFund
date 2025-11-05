@@ -1,4 +1,4 @@
-package com.chakri.fundly.service;
+package com.chakri.fundly.config;
 
 import com.chakri.fundly.model.AuthProvider;
 import com.chakri.fundly.model.Users;
@@ -33,7 +33,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw new OAuth2AuthenticationException("Email not found from OAuth2 provider");
         }
 
-        Users user = userRepo.findByEmail(email);
+        // ✅ ONLY CHANGE: Add .orElse(null) here
+        Users user = userRepo.findByEmail(email).orElse(null);
 
         if (user == null) {
             // Create new user for first-time OAuth2 login

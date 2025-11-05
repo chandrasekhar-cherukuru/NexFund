@@ -6,6 +6,7 @@ import { Calendar, Heart, Gift, Upload, CreditCard, MessageSquare } from 'lucide
 import Navbar from '../Layout/Navbar';
 import toast from 'react-hot-toast';
 
+
 const CreateForm = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -23,8 +24,10 @@ const CreateForm = () => {
     imageUrl: ''
   });
 
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isImageUploading, setIsImageUploading] = useState(false);
+
 
   useEffect(() => {
     const type = searchParams.get('type');
@@ -37,6 +40,7 @@ const CreateForm = () => {
     }
   }, [searchParams]);
 
+
   const getTypeConfig = (type) => {
     switch (type) {
       case 'event':
@@ -44,33 +48,51 @@ const CreateForm = () => {
           icon: <Calendar className="h-6 w-6" />,
           title: 'Create Event',
           color: 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30',
-          description: 'Fixed amount collection for specific events'
+          description: 'Fixed amount collection for specific events',
+          titlePlaceholder: 'Enter a catchy title for your event',
+          descriptionPlaceholder: 'Describe what your event is about',
+          amountLabel: 'Registration Fee',
+          upiLabel: 'Enter your UPI ID for event payments'
         };
       case 'donation':
         return {
           icon: <Heart className="h-6 w-6" />,
-          title: 'Create Donation',
+          title: 'Create Donation Fundraiser',
           color: 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30',
-          description: 'Accept any amount for charitable causes'
+          description: 'Accept any amount for charitable causes',
+          titlePlaceholder: 'Enter a catchy title for your donation fundraiser',
+          descriptionPlaceholder: 'Describe what this donation fundraiser is for',
+          amountLabel: 'Target Amount',
+          upiLabel: 'Enter your UPI ID for receiving donations'
         };
       case 'gift':
         return {
           icon: <Gift className="h-6 w-6" />,
-          title: 'Create Gift Pool',
+          title: 'Create Gift Fundraiser',
           color: 'text-purple-600 bg-purple-100 dark:text-purple-400 dark:bg-purple-900/30',
-          description: 'Pool money together for group gifts'
+          description: 'Pool money together for group gifts',
+          titlePlaceholder: 'Enter a catchy title for your gift fundraiser',
+          descriptionPlaceholder: 'Describe what your gift fundraiser is for',
+          amountLabel: 'Gift Price',
+          upiLabel: 'Enter your UPI ID for gift payments'
         };
       default:
         return {
           icon: <Gift className="h-6 w-6" />,
           title: 'Create Fundraiser',
           color: 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700',
-          description: 'Create your fundraiser'
+          description: 'Create your fundraiser',
+          titlePlaceholder: 'Enter a catchy title',
+          descriptionPlaceholder: 'Describe your fundraiser',
+          amountLabel: 'Amount',
+          upiLabel: 'Enter your UPI ID'
         };
     }
   };
 
+
   const typeConfig = getTypeConfig(formData.type);
+
 
   const validateUpiId = (upiId) => {
     if (!upiId || !upiId.trim()) {
@@ -91,6 +113,7 @@ const CreateForm = () => {
     return { valid: true, message: 'Valid UPI ID' };
   };
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -105,11 +128,13 @@ const CreateForm = () => {
       return;
     }
 
+
     if (!formData.description.trim()) {
       toast.error('Please enter a description');
       console.error('❌ Validation failed: Description is empty');
       return;
     }
+
 
     const upiValidation = validateUpiId(formData.upiId);
     if (!upiValidation.valid) {
@@ -118,11 +143,13 @@ const CreateForm = () => {
       return;
     }
 
+
     if (formData.isFixedAmount && (!formData.amount || parseFloat(formData.amount) <= 0)) {
       toast.error('Please enter a valid amount');
       console.error('❌ Validation failed: Amount is invalid -', formData.amount);
       return;
     }
+
 
     if (!user) {
       toast.error('Please log in to create a fundraiser');
@@ -130,7 +157,9 @@ const CreateForm = () => {
       return;
     }
 
+
     setIsSubmitting(true);
+
 
     const fundraiserData = {
       title: formData.title.trim(),
@@ -146,7 +175,9 @@ const CreateForm = () => {
       participants: 0
     };
 
+
     console.log('🚀 Creating fundraiser with processed data:', fundraiserData);
+
 
     try {
       const id = await createFundraiser(fundraiserData);
@@ -193,6 +224,7 @@ const CreateForm = () => {
     }
   };
 
+
   const convertToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -202,11 +234,14 @@ const CreateForm = () => {
     });
   };
 
+
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+
     console.log('📷 Image upload started:', file.name, 'Size:', file.size, 'Type:', file.type);
+
 
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
@@ -215,6 +250,7 @@ const CreateForm = () => {
       return;
     }
 
+
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
       toast.error('Image size must be less than 5MB');
@@ -222,7 +258,9 @@ const CreateForm = () => {
       return;
     }
 
+
     setIsImageUploading(true);
+
 
     try {
       const base64Image = await convertToBase64(file);
@@ -242,13 +280,16 @@ const CreateForm = () => {
     }
   };
 
+
   const removeImage = () => {
     setFormData(prev => ({ ...prev, imageUrl: '' }));
     console.log('🗑️ Image removed');
     toast.success('Image removed');
   };
 
+
   const upiValidation = validateUpiId(formData.upiId);
+
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
@@ -256,20 +297,6 @@ const CreateForm = () => {
       
       <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         
-        {/* Development Debug Panel */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg text-xs">
-            <h4 className="font-bold text-blue-900 dark:text-blue-300 mb-2">🔧 Development Debug Info:</h4>
-            <div className="space-y-1 text-blue-800 dark:text-blue-200">
-              <p><strong>User:</strong> {user?.username || 'Not logged in'}</p>
-              <p><strong>JWT Token:</strong> {localStorage.getItem('jwt_token') ? 'Present ✅' : 'Missing ❌'}</p>
-              <p><strong>Form Type:</strong> {formData.type}</p>
-              <p><strong>UPI Validation:</strong> {upiValidation.valid ? '✅ Valid' : '❌ ' + upiValidation.message}</p>
-              <p><strong>Backend API:</strong> http://localhost:8080</p>
-            </div>
-          </div>
-        )}
-
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-200">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-3">
@@ -282,6 +309,7 @@ const CreateForm = () => {
               </div>
             </div>
           </div>
+
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Type Selection */}
@@ -313,6 +341,7 @@ const CreateForm = () => {
               })}
             </div>
 
+
             {/* Title */}
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -325,10 +354,11 @@ const CreateForm = () => {
                 value={formData.title}
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                 className="block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                placeholder="Enter a catchy title for your fundraiser"
+                placeholder={typeConfig.titlePlaceholder}
                 disabled={isSubmitting}
               />
             </div>
+
 
             {/* Description */}
             <div>
@@ -342,10 +372,11 @@ const CreateForm = () => {
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 className="block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                placeholder="Describe what this fundraiser is for..."
+                placeholder={typeConfig.descriptionPlaceholder}
                 disabled={isSubmitting}
               />
             </div>
+
 
             {/* Image Upload */}
             <div>
@@ -424,11 +455,12 @@ const CreateForm = () => {
               </div>
             </div>
 
+
             {/* Amount - Only for Events */}
             {formData.type === 'event' && (
               <div>
                 <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Fixed Amount *
+                  {typeConfig.amountLabel} *
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -449,6 +481,7 @@ const CreateForm = () => {
                 </div>
               </div>
             )}
+
 
             {/* UPI ID Field with Real-time Validation */}
             <div>
@@ -490,10 +523,11 @@ const CreateForm = () => {
               }`}>
                 {formData.upiId && !upiValidation.valid 
                   ? upiValidation.message 
-                  : 'Enter your UPI ID for receiving payments (e.g., yourname@paytm)'
+                  : typeConfig.upiLabel
                 }
               </p>
             </div>
+
 
             {/* Payment Message */}
             <div>
@@ -516,6 +550,7 @@ const CreateForm = () => {
               </div>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">This message will be shown to people when they make a payment</p>
             </div>
+
 
             {/* Form Actions */}
             <div className="flex justify-end space-x-4 pt-6">
@@ -548,5 +583,6 @@ const CreateForm = () => {
     </div>
   );
 };
+
 
 export default CreateForm;

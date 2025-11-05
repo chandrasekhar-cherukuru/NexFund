@@ -66,7 +66,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         }
 
         // Step 1: Check if the user already exists in DB
-        Users user = userRepo.findByEmail(email);
+        Users user = userRepo.findByEmail(email).orElse(null);
 
         // Step 2: If user does NOT exist, create a new one
         if (user == null) {

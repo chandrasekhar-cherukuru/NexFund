@@ -1,7 +1,7 @@
 package com.chakri.fundly.model;
 
 import jakarta.persistence.*;
-import com.chakri.fundly.model.AuthProvider; // ✅ Import your custom enum
+import com.chakri.fundly.model.AuthProvider;
 
 @Entity
 public class Users {
@@ -16,20 +16,21 @@ public class Users {
     @Column(unique = true)
     private String email;
 
-    private String password; // Can be NULL for OAuth2 users
+    private String password;
 
-    // NEW: OAuth2 fields
     @Enumerated(EnumType.STRING)
-    private AuthProvider authProvider = AuthProvider.LOCAL; // ✅ Now uses your enum
+    private AuthProvider authProvider = AuthProvider.LOCAL;
 
-    private String providerId; // Google user ID
+    private String providerId;
 
-    private String name; // Full name from OAuth2
+    private String name;
 
-    // Default constructor
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    private String profileImage;
+
     public Users() {}
 
-    // Existing constructor (for regular registration)
     public Users(String username, String email, String password) {
         this.username = username;
         this.email = email;
@@ -37,17 +38,15 @@ public class Users {
         this.authProvider = AuthProvider.LOCAL;
     }
 
-    // NEW: OAuth2 constructor
     public Users(String email, String name, AuthProvider authProvider, String providerId) {
         this.email = email;
         this.name = name;
-        this.username = name; // Use name as username for OAuth2 users
+        this.username = name;
         this.authProvider = authProvider;
         this.providerId = providerId;
-        this.password = null; // No password for OAuth2 users
+        this.password = null;
     }
 
-    // Getters and setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
@@ -69,13 +68,18 @@ public class Users {
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
+    public String getProfileImage() { return profileImage; }
+    public void setProfileImage(String profileImage) { this.profileImage = profileImage; }
+
     @Override
     public String toString() {
         return "Users{" +
                 "id=" + id +
                 ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
+                ", name='" + name + '\'' +
                 ", authProvider=" + authProvider +
+                ", profileImage=" + (profileImage != null ? "present" : "null") +
                 '}';
     }
 }
