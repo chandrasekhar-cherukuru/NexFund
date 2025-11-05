@@ -14,7 +14,6 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  // Icons array for rotation
   const icons = [
     { 
       component: <Gift className="h-10 w-10 text-blue-600 dark:text-blue-400" />, 
@@ -33,7 +32,6 @@ const Login = () => {
     }
   ];
 
-  // Rotate icons every 2 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIconIndex((prevIndex) => (prevIndex + 1) % icons.length);
@@ -51,31 +49,32 @@ const Login = () => {
 
     setIsLoading(true);
     try {
-      localStorage.clear();
+      console.log('📤 Attempting login with username:', username);
       
       const success = await login(username, password);
+      
       if (success) {
+        console.log('✅ Login successful');
+        const token = localStorage.getItem('token');
+        console.log('✅ Token in localStorage:', token ? token.substring(0, 20) + '...' : 'MISSING');
+        
         toast.success('Login successful!');
         navigate('/dashboard', { replace: true });
       } else {
         toast.error('Invalid username or password');
       }
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('❌ Login failed:', error);
       toast.error('Login failed. Please try again.');
-      localStorage.removeItem('jwt_token');
-      localStorage.removeItem('user');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle OAuth2 Google Login
   const handleGoogleLogin = () => {
     setIsOAuthLoading(true);
     toast.loading('Redirecting to Google...', { id: 'oauth-loading' });
     
-    // Redirect to your Spring Boot OAuth2 endpoint
     window.location.href = 'http://localhost:8080/oauth2/authorization/google';
   };
 
@@ -101,7 +100,6 @@ const Login = () => {
             <p className="text-gray-500 dark:text-gray-400">Sign in to your account</p>
           </div>
 
-          {/* OAuth2 Login Section */}
           <div className="mt-8">
             <button
               onClick={handleGoogleLogin}
@@ -126,7 +124,6 @@ const Login = () => {
               )}
             </button>
 
-            {/* Divider */}
             <div className="relative mb-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300 dark:border-gray-600" />

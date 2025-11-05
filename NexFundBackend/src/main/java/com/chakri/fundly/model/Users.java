@@ -2,6 +2,7 @@ package com.chakri.fundly.model;
 
 import jakarta.persistence.*;
 import com.chakri.fundly.model.AuthProvider;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 public class Users {
@@ -56,6 +57,7 @@ public class Users {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
 

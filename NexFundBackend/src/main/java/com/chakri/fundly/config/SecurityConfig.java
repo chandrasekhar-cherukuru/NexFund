@@ -1,6 +1,5 @@
 package com.chakri.fundly.config;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,7 +38,7 @@ public class SecurityConfig {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private CustomOAuth2UserService customOAuth2UserService; // **ADDED THIS**
+    private CustomOAuth2UserService customOAuth2UserService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -52,13 +51,15 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
 
+                        // ✅ PROFILE ENDPOINTS - AUTHENTICATED REQUIRED
+                        .requestMatchers("/getProfile", "/updateProfile").authenticated()
+
                         // Protected endpoints
                         .requestMatchers("/events/**", "/gifts/**", "/donations/**", "/participants/**", "/api/upi/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // **FIXED: OAuth2 Login Configuration with Custom User Service**
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oauth2AuthenticationSuccessHandler)

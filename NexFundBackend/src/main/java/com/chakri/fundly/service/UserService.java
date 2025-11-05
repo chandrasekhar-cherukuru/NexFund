@@ -27,8 +27,9 @@ public class UserService {
 
     public Users register(Users user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        repo.save(user);
-        return user;
+        Users savedUser = repo.save(user);
+        System.out.println("✅ User registered: " + savedUser.getUsername() + " | Email: " + savedUser.getEmail());
+        return savedUser;
     }
 
     public String verify(Users user) {
@@ -44,7 +45,9 @@ public class UserService {
     }
 
     public Users updateUserProfile(Users user) {
-        Users existingUser = repo.findById(user.getId())
+        // Get current logged-in user from JWT token
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Users existingUser = repo.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (user.getName() != null && !user.getName().isEmpty()) {
@@ -60,12 +63,16 @@ public class UserService {
             existingUser.setProfileImage(user.getProfileImage());
         }
 
-        return repo.save(existingUser);
+        Users updatedUser = repo.save(existingUser);
+        System.out.println("✅ Profile updated: " + updatedUser.getUsername() + " | Email: " + updatedUser.getEmail());
+        return updatedUser;
     }
 
     public Users getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return repo.findByUsername(username)
+        Users user = repo.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        System.out.println("✅ getCurrentUser: " + user.getUsername() + " | Email: " + user.getEmail());
+        return user;
     }
 }
