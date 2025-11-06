@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Gift, Calendar, Heart, Moon, Sun, Zap, Users, CheckCircle, Mail, Smile, Link2 } from 'lucide-react';
+import { Gift, Calendar, Heart, Moon, Sun, Zap, Users, CheckCircle, Mail, Smile, Link2, Star, Send, X } from 'lucide-react';
 import './Landing.css';
+import toast from 'react-hot-toast';
 
 const textVariants = {
   initial: {
@@ -45,13 +46,27 @@ const scrollButtonVariants = {
 
 const Landing = () => {
   const [stats, setStats] = useState({
+    events: 0,
     donations: 0,
-    funds: 0,
     giftPools: 0,
   });
 
   const [currentIconIndex, setCurrentIconIndex] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [allUserFeedbacks, setAllUserFeedbacks] = useState([]);
+  const [feedbackCount, setFeedbackCount] = useState(0);
+  const [isLoadingFeedbacks, setIsLoadingFeedbacks] = useState(false);
+  
+  const [feedbackData, setFeedbackData] = useState({
+    name: '',
+    email: '',
+    message: '',
+    type: 'event',
+    rating: 5,
+  });
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -79,6 +94,7 @@ const Landing = () => {
     },
   ];
 
+  // ✅ Icon rotation effect
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIconIndex((prevIndex) => (prevIndex + 1) % icons.length);
@@ -86,14 +102,78 @@ const Landing = () => {
     return () => clearInterval(interval);
   }, [icons.length]);
 
+  // ✅ Fetch approved feedbacks from backend
+  const fetchApprovedFeedbacks = async () => {
+    setIsLoadingFeedbacks(true);
+    try {
+      console.log('🔍 Fetching approved feedbacks...');
+      const response = await fetch('http://localhost:8080/feedback/approved');
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Feedbacks received:', data);
+        
+        // ✅ Sort by createdAt descending (newest first)
+        const sortedFeedbacks = data.sort((a, b) => {
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+        
+        setAllUserFeedbacks(sortedFeedbacks);
+        setFeedbackCount(data.length);
+        
+        console.log('✅ Total feedback count:', data.length);
+        console.log('✅ Latest 3 feedbacks:', sortedFeedbacks.slice(0, 3));
+      } else {
+        console.error('❌ Failed to fetch feedbacks, status:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching feedbacks:', error);
+    } finally {
+      setIsLoadingFeedbacks(false);
+    }
+  };
+
+  // ✅ Fetch stats from backend
+  const fetchStats = async () => {
+    try {
+      console.log('🔍 Fetching stats...');
+      const response = await fetch('http://localhost:8080/stats');
+      if (response.ok) {
+        const data = await response.json();
+        setStats({
+          events: data.events || 0,
+          donations: data.donations || 0,
+          giftPools: data.giftPools || 0,
+        });
+        console.log('✅ Stats fetched:', data);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching stats:', error);
+    }
+  };
+
+  // ✅ Initial load - fetch stats and feedbacks
   useEffect(() => {
-    setStats({
-      donations: 1250,
-      funds: 340,
-      giftPools: 89,
-    });
+    console.log('🔍 Landing page mounted - fetching initial data');
+    fetchStats();
+    fetchApprovedFeedbacks();
   }, []);
 
+  // ✅ Listen for feedback submission events
+  useEffect(() => {
+    const handleFeedbackSubmitted = () => {
+      console.log('📢 Feedback submitted event received - refreshing feedbacks');
+      fetchApprovedFeedbacks();
+    };
+
+    window.addEventListener('feedbackSubmitted', handleFeedbackSubmitted);
+    
+    return () => {
+      window.removeEventListener('feedbackSubmitted', handleFeedbackSubmitted);
+    };
+  }, []);
+
+  // ✅ Dark mode setup
   useEffect(() => {
     const saved = localStorage.getItem('isDarkMode');
     if (saved !== null) {
@@ -130,6 +210,67 @@ const Landing = () => {
 
   const handleCreateAccount = () => {
     window.location.href = 'http://localhost:3000/register';
+  };
+
+  const handleFeedbackChange = (e) => {
+    const { name, value } = e.target;
+    setFeedbackData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleFeedbackRating = (rating) => {
+    setFeedbackData((prev) => ({
+      ...prev,
+      rating,
+    }));
+  };
+
+  const handleFeedbackSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmittingFeedback(true);
+
+    try {
+      console.log('📤 Submitting feedback:', feedbackData);
+      const response = await fetch('http://localhost:8080/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(feedbackData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('✅ Feedback submitted successfully');
+        toast.success('Thank you! Your feedback has been submitted! 🙏');
+        setShowFeedbackModal(false);
+        setFeedbackData({
+          name: '',
+          email: '',
+          message: '',
+          type: 'event',
+          rating: 5,
+        });
+        // ✅ Refresh feedbacks after submission
+        await fetchApprovedFeedbacks();
+      } else {
+        console.error('❌ Feedback submission error:', data);
+        toast.error(data.error || 'Failed to submit feedback');
+      }
+    } catch (error) {
+      console.error('❌ Error submitting feedback:', error);
+      toast.error('Error submitting feedback');
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
+
+  const handleSkipFeedback = () => {
+    setShowFeedbackModal(false);
+    handleSignIn();
   };
 
   const handleFormChange = (e) => {
@@ -174,7 +315,8 @@ const Landing = () => {
     }
   };
 
-  const reviews = [
+  // ✅ Default reviews with types for styling
+  const defaultReviews = [
     {
       id: 1,
       name: 'Arjun Sharma',
@@ -197,6 +339,11 @@ const Landing = () => {
       type: 'giftpool',
     },
   ];
+
+  // ✅ Get latest 3 feedbacks (newest first) OR show default if no feedbacks
+  const displayedReviews = allUserFeedbacks.length > 0 
+    ? allUserFeedbacks.slice(0, 3) 
+    : defaultReviews;
 
   const features = [
     {
@@ -274,6 +421,7 @@ const Landing = () => {
                 />
               </div>
             </button>
+
             <button onClick={handleSignIn} className="nav-button login-btn">
               Sign In
             </button>
@@ -334,9 +482,7 @@ const Landing = () => {
           </motion.div>
 
           <div>
-            {/* ANIMATION LAYER */}
             <div className="animation-layer">
-              {/* LINK2 ICON FROM LUCIDE - APPEARS AFTER 2 SECONDS */}
               <div className="link2-icon">
                 <Link2 className="link2-lucide" size={50} />
               </div>
@@ -349,7 +495,6 @@ const Landing = () => {
                 <div className="jar-fill"></div>
               </div>
 
-              {/* CHECKMARK */}
               <div className="checkmark">
                 <svg width="60" height="60" viewBox="0 0 60 60">
                   <circle className="checkmark-circle" cx="30" cy="30" r="28" />
@@ -360,81 +505,22 @@ const Landing = () => {
                 </svg>
               </div>
 
-              {/* STICK FIGURES */}
-              <div className="stick-figure" id="figure1">
-                <svg width="60" height="80" viewBox="0 0 60 80">
-                  <circle className="stick-head" cx="30" cy="15" r="10" />
-                  <line className="stick-body" x1="30" y1="25" x2="30" y2="50" />
-                  <line className="stick-body" x1="30" y1="35" x2="15" y2="45" />
-                  <line className="stick-body" x1="30" y1="35" x2="45" y2="45" />
-                  <line className="stick-body" x1="30" y1="50" x2="20" y2="70" />
-                  <line className="stick-body" x1="30" y1="50" x2="40" y2="70" />
-                </svg>
-              </div>
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="stick-figure" id={`figure${i}`}>
+                  <svg width="60" height="80" viewBox="0 0 60 80">
+                    <circle className="stick-head" cx="30" cy="15" r="10" />
+                    <line className="stick-body" x1="30" y1="25" x2="30" y2="50" />
+                    <line className="stick-body" x1="30" y1="35" x2="15" y2="45" />
+                    <line className="stick-body" x1="30" y1="35" x2="45" y2="45" />
+                    <line className="stick-body" x1="30" y1="50" x2="20" y2="70" />
+                    <line className="stick-body" x1="30" y1="50" x2="40" y2="70" />
+                  </svg>
+                </div>
+              ))}
 
-              <div className="stick-figure" id="figure2">
-                <svg width="60" height="80" viewBox="0 0 60 80">
-                  <circle className="stick-head" cx="30" cy="15" r="10" />
-                  <line className="stick-body" x1="30" y1="25" x2="30" y2="50" />
-                  <line className="stick-body" x1="30" y1="35" x2="15" y2="45" />
-                  <line className="stick-body" x1="30" y1="35" x2="45" y2="45" />
-                  <line className="stick-body" x1="30" y1="50" x2="20" y2="70" />
-                  <line className="stick-body" x1="30" y1="50" x2="40" y2="70" />
-                </svg>
-              </div>
-
-              <div className="stick-figure" id="figure3">
-                <svg width="60" height="80" viewBox="0 0 60 80">
-                  <circle className="stick-head" cx="30" cy="15" r="10" />
-                  <line className="stick-body" x1="30" y1="25" x2="30" y2="50" />
-                  <line className="stick-body" x1="30" y1="35" x2="15" y2="45" />
-                  <line className="stick-body" x1="30" y1="35" x2="45" y2="45" />
-                  <line className="stick-body" x1="30" y1="50" x2="20" y2="70" />
-                  <line className="stick-body" x1="30" y1="50" x2="40" y2="70" />
-                </svg>
-              </div>
-
-              <div className="stick-figure" id="figure4">
-                <svg width="60" height="80" viewBox="0 0 60 80">
-                  <circle className="stick-head" cx="30" cy="15" r="10" />
-                  <line className="stick-body" x1="30" y1="25" x2="30" y2="50" />
-                  <line className="stick-body" x1="30" y1="35" x2="15" y2="45" />
-                  <line className="stick-body" x1="30" y1="35" x2="45" y2="45" />
-                  <line className="stick-body" x1="30" y1="50" x2="20" y2="70" />
-                  <line className="stick-body" x1="30" y1="50" x2="40" y2="70" />
-                </svg>
-              </div>
-
-              <div className="stick-figure" id="figure5">
-                <svg width="60" height="80" viewBox="0 0 60 80">
-                  <circle className="stick-head" cx="30" cy="15" r="10" />
-                  <line className="stick-body" x1="30" y1="25" x2="30" y2="50" />
-                  <line className="stick-body" x1="30" y1="35" x2="15" y2="45" />
-                  <line className="stick-body" x1="30" y1="35" x2="45" y2="45" />
-                  <line className="stick-body" x1="30" y1="50" x2="20" y2="70" />
-                  <line className="stick-body" x1="30" y1="50" x2="40" y2="70" />
-                </svg>
-              </div>
-
-              <div className="stick-figure" id="figure6">
-                <svg width="60" height="80" viewBox="0 0 60 80">
-                  <circle className="stick-head" cx="30" cy="15" r="10" />
-                  <line className="stick-body" x1="30" y1="25" x2="30" y2="50" />
-                  <line className="stick-body" x1="30" y1="35" x2="15" y2="45" />
-                  <line className="stick-body" x1="30" y1="35" x2="45" y2="45" />
-                  <line className="stick-body" x1="30" y1="50" x2="20" y2="70" />
-                  <line className="stick-body" x1="30" y1="50" x2="40" y2="70" />
-                </svg>
-              </div>
-
-              {/* COINS */}
-              <div className="coin coin1"></div>
-              <div className="coin coin2"></div>
-              <div className="coin coin3"></div>
-              <div className="coin coin4"></div>
-              <div className="coin coin5"></div>
-              <div className="coin coin6"></div>
-              <div className="coin coin7"></div>
+              {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                <div key={`coin${i}`} className={`coin coin${i}`}></div>
+              ))}
             </div>
           </div>
         </div>
@@ -472,8 +558,8 @@ const Landing = () => {
                 <Calendar className="stat-icon-svg" size={48} />
               </div>
             </div>
-            <div className="stat-number">{stats.funds.toLocaleString()}</div>
-            <p className="stat-label">Events Funds</p>
+            <div className="stat-number">{stats.events.toLocaleString()}</div>
+            <p className="stat-label">Events Created</p>
           </motion.div>
 
           <motion.div
@@ -510,7 +596,7 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* WHY CHOOSE NEXFUND SECTION */}
+      {/* FEATURES SECTION */}
       <section className="features-section">
         <motion.h2
           className="section-title"
@@ -544,7 +630,7 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* REVIEWS SECTION */}
+      {/* ✅ REVIEWS SECTION - LATEST 3 FEEDBACKS WITH AUTO-UPDATE */}
       <section className="reviews-section">
         <motion.h2
           className="section-title"
@@ -555,25 +641,72 @@ const Landing = () => {
         >
           What Users Love
         </motion.h2>
-        <div className="reviews-grid">
-          {reviews.map((review, index) => (
-            <motion.div
-              key={review.id}
-              className={`review-card review-${review.type}`}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              viewport={{ once: true }}
-            >
-              <div className={`review-avatar avatar-${review.type}`}>
-                {review.name.split(' ').map(n => n[0]).join('')}
+
+        {isLoadingFeedbacks ? (
+          <div className="flex items-center justify-center h-40">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
+          </div>
+        ) : (
+          <>
+            <div className="reviews-grid">
+              {displayedReviews.map((review, index) => {
+                // ✅ Use type if available (from feedback) or default type styling
+                const reviewType = review.type || 'event';
+                
+                return (
+                  <motion.div
+                    key={`${review.id}-${index}`}
+                    className={`review-card review-${reviewType}`}
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                    viewport={{ once: false }}
+                  >
+                    <div className={`review-avatar avatar-${reviewType}`}>
+                      {review.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+
+                    {/* ✅ Show stars only for user feedbacks */}
+                    {allUserFeedbacks.length > 0 && review.rating && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <p className="review-author">{review.name}</p>
+                        <div style={{ display: 'flex', gap: '2px' }}>
+                          {[...Array(review.rating)].map((_, i) => (
+                            <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {allUserFeedbacks.length === 0 && (
+                      <p className="review-author" style={{ marginBottom: '8px' }}>{review.name}</p>
+                    )}
+
+                    <p className="review-text">{review.message || review.text}</p>
+                    <p className="review-role">{review.role}</p>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* ✅ SMALL COUNTER - AFTER THE THREE BOXES */}
+            {feedbackCount > 0 && (
+              <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                <span style={{
+                  fontSize: '0.65rem',
+                  backgroundColor: '#ef4444',
+                  color: 'white',
+                  borderRadius: '12px',
+                  padding: '3px 8px',
+                  display: 'inline-block',
+                  fontWeight: 'bold',
+                }}>
+                  {feedbackCount} total feedback{feedbackCount !== 1 ? 's' : ''}
+                </span>
               </div>
-              <p className="review-text">{review.text}</p>
-              <p className="review-author">{review.name}</p>
-              <p className="review-role">{review.role}</p>
-            </motion.div>
-          ))}
-        </div>
+            )}
+          </>
+        )}
       </section>
 
       {/* HAVE ANY QUERIES SECTION */}
@@ -669,6 +802,126 @@ const Landing = () => {
           </motion.button>
         </motion.div>
       </section>
+
+      {/* ✅ FEEDBACK MODAL - Shows when user logs out */}
+      {showFeedbackModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            
+            <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-700">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Share Your Feedback</h2>
+              <button
+                onClick={handleSkipFeedback}
+                className="p-1 hover:bg-white/50 dark:hover:bg-gray-600 rounded-lg transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+              </button>
+            </div>
+
+            <form onSubmit={handleFeedbackSubmit} className="p-6 space-y-4">
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Name *
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={feedbackData.name}
+                  onChange={handleFeedbackChange}
+                  required
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Your name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Type of Feedback *
+                </label>
+                <select
+                  name="type"
+                  value={feedbackData.type}
+                  onChange={handleFeedbackChange}
+                  required
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="event">Event</option>
+                  <option value="donation">Donation</option>
+                  <option value="giftpool">Gift Pool</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Rating *
+                </label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => handleFeedbackRating(star)}
+                      className={`transition-all ${
+                        feedbackData.rating >= star
+                          ? 'text-yellow-400'
+                          : 'text-gray-300 dark:text-gray-600'
+                      }`}
+                    >
+                      <Star className="h-6 w-6 fill-current" />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-gray-600 dark:text-gray-400">
+                    {feedbackData.rating} / 5
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Your Feedback *
+                </label>
+                <textarea
+                  name="message"
+                  value={feedbackData.message}
+                  onChange={handleFeedbackChange}
+                  required
+                  rows="4"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  placeholder="Tell us what you think..."
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={handleSkipFeedback}
+                  className="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors font-medium"
+                >
+                  Skip
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingFeedback}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50"
+                >
+                  {isSubmittingFeedback ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      <span>Submit</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

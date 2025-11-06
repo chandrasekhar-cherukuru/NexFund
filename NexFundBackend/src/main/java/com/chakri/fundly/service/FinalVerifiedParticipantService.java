@@ -5,7 +5,7 @@ import com.chakri.fundly.repo.FinalVerifiedParticipantRepo;
 import com.chakri.fundly.repo.VerifiedParticipantRepo;
 import com.chakri.fundly.repo.EventRepo;
 import com.chakri.fundly.repo.GiftRepo;
-import com.chakri.fundly.repository.DonationRepo;
+import com.chakri.fundly.repo.DonationRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -2,6 +2,7 @@ package com.chakri.fundly.service;
 
 import com.chakri.fundly.model.Gift;
 import com.chakri.fundly.repo.GiftRepo;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,12 +13,18 @@ public class GiftService {
 
     private final GiftRepo giftRepo;
 
+    @Autowired
+    private StatsService statsService;
+
     public GiftService(GiftRepo giftRepo) {
         this.giftRepo = giftRepo;
     }
 
     public Gift createGift(Gift gift) {
-        return giftRepo.save(gift);
+        Gift savedGift = giftRepo.save(gift);
+        statsService.incrementGiftPoolCount(); // ✅ Increment on create
+        System.out.println("✅ Gift Pool created and stats incremented");
+        return savedGift;
     }
 
     public List<Gift> getAllGifts() {

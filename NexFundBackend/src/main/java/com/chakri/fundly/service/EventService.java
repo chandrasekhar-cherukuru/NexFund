@@ -14,12 +14,18 @@ public class EventService {
     @Autowired
     private EventRepo repo;
 
+    @Autowired
+    private StatsService statsService;
+
     public List<Events> getEvents() {
         return repo.findAll();
     }
 
     public Events saveEvent(Events event) {
-        return repo.save(event);
+        Events savedEvent = repo.save(event);
+        statsService.incrementEventCount(); // ✅ Increment on create
+        System.out.println("✅ Event created and stats incremented");
+        return savedEvent;
     }
 
     public Optional<Events> getEventById(String id) {

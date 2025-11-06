@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Gift, Calendar, Heart, LogOut, User, X, Camera, Edit2, Check } from 'lucide-react';
 import DarkModeToggle from '../DarkModeToggle';
+import FeedbackModal from "../Feedback/FeedbackModal";
 import toast from 'react-hot-toast';
 
 const Navbar = () => {
@@ -10,9 +11,12 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [currentIconIndex, setCurrentIconIndex] = useState(0);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingProfile, setIsFetchingProfile] = useState(false);
+  const [isLogoutPending, setIsLogoutPending] = useState(false); // ✅ NEW
+  
   const [profileData, setProfileData] = useState({
     profileImage: null,
     name: '',
@@ -102,10 +106,28 @@ const Navbar = () => {
     }
   };
 
+  // ✅ FIXED: Show feedback modal FIRST, then logout
   const handleLogout = () => {
-    logout();
-    toast.success('Logged out successfully');
-    navigate('/');
+    console.log('🔍 Logout clicked - showing feedback modal first');
+    setShowFeedbackModal(true); // Show modal BEFORE logout
+    setIsLogoutPending(true); // Mark that logout is pending
+  };
+
+  // ✅ FIXED: Only call logout AFTER feedback modal closes
+  const handleFeedbackModalClose = () => {
+    console.log('🔍 Feedback modal closed - performing logout now');
+    setShowFeedbackModal(false);
+    
+    if (isLogoutPending) {
+      toast.success('Logged out successfully');
+      logout(); // Clear auth AFTER modal closes
+      setIsLogoutPending(false);
+      
+      // Navigate after auth is cleared
+      setTimeout(() => {
+        navigate('/');
+      }, 100);
+    }
   };
 
   const handleProfileImageChange = (e) => {
@@ -148,7 +170,6 @@ const Navbar = () => {
                  localStorage.getItem('auth_token') ||
                  localStorage.getItem('authToken');
 
-      // ✅ REMOVED id from body - backend gets it from JWT token
       const response = await fetch('http://localhost:8080/updateProfile', {
         method: 'PUT',
         headers: {
@@ -404,7 +425,10 @@ const Navbar = () => {
               {!isEditing ? (
                 <>
                   <button
-                    onClick={() => setShowProfileModal(false)}
+                    onClick={() => {
+                      setShowProfileModal(false);
+                      setIsEditing(false);
+                    }}
                     className="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors font-medium"
                   >
                     Close
@@ -449,6 +473,12 @@ const Navbar = () => {
           </div>
         </div>
       )}
+
+      {/* ✅ FEEDBACK MODAL - Shows on logout BEFORE auth is cleared */}
+      <FeedbackModal 
+        isOpen={showFeedbackModal} 
+        onClose={handleFeedbackModalClose}
+      />
     </>
   );
 };

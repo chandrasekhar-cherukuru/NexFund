@@ -1,5 +1,6 @@
 package com.chakri.fundly.config;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 
 import java.util.Arrays;
 
@@ -50,6 +52,11 @@ public class SecurityConfig {
                         .requestMatchers("/", "/login", "/register", "/error").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+
+                        // ✅ PUBLIC LANDING PAGE ENDPOINTS - NO AUTHENTICATION REQUIRED
+                        .requestMatchers("/stats").permitAll()
+                        .requestMatchers("/feedback").permitAll()
+                        .requestMatchers("/feedback/approved").permitAll()
 
                         // ✅ PROFILE ENDPOINTS - AUTHENTICATED REQUIRED
                         .requestMatchers("/getProfile", "/updateProfile").authenticated()
