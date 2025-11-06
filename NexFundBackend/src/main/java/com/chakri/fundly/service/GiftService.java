@@ -12,12 +12,12 @@ import java.util.Optional;
 public class GiftService {
 
     private final GiftRepo giftRepo;
+    private final StatsService statsService;
 
     @Autowired
-    private StatsService statsService;
-
-    public GiftService(GiftRepo giftRepo) {
+    public GiftService(GiftRepo giftRepo, StatsService statsService) {
         this.giftRepo = giftRepo;
+        this.statsService = statsService;
     }
 
     public Gift createGift(Gift gift) {

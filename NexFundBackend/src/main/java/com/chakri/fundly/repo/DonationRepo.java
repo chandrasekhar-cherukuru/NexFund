@@ -1,4 +1,4 @@
-package com.chakri.fundly.repository;
+package com.chakri.fundly.repo;
 
 import com.chakri.fundly.model.Donation;
 import org.springframework.data.jpa.repository.JpaRepository;
