@@ -10,6 +10,22 @@ jobs:
   test-build:
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: fundly_test
+          MYSQL_ROOT_PASSWORD: testpass
+          MYSQL_USER: testuser
+          MYSQL_PASSWORD: testpass
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 3306:3306
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -21,7 +37,16 @@ jobs:
           distribution: 'oracle'
           cache: maven
 
+      - name: Wait for MySQL
+        run: |
+          sleep 10
+          echo "MySQL service ready"
+
       - name: Run Unit Tests with JaCoCo
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/fundly_test
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: testpass
         run: mvn clean test jacoco:report
         working-directory: NexFundBackend
 
