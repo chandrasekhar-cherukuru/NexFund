@@ -5,6 +5,7 @@ import com.chakri.fundly.service.StatsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -18,14 +19,19 @@ public class StatsController {
     public ResponseEntity<?> getStats() {
         try {
             Stats stats = statsService.getStats();
-            return ResponseEntity.ok(Map.of(
-                    "events", stats.getEventCount(),
-                    "donations", stats.getDonationCount(),
-                    "giftPools", stats.getGiftPoolCount()
-            ));
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("events", stats.getEventCount());
+            response.put("donations", stats.getDonationCount());
+            response.put("giftPools", stats.getGiftPoolCount());
+
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", e.getMessage()));
+            Map<String, Object> errorResponse = new HashMap<>();
+            String errorMessage = e.getMessage() != null ? e.getMessage() : "An error occurred";
+            errorResponse.put("error", errorMessage);
+
+            return ResponseEntity.badRequest().body(errorResponse);
         }
     }
 }
