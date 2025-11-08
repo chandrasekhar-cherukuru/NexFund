@@ -87,7 +87,6 @@ jobs:
 
       - name: Tag Docker image for ECR
         run: docker tag nexfund-backend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/nexfund-repo:latest
-        working-directory: NexFundBackend
 
       - name: Push Docker image to ECR
         run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/nexfund-repo:latest
@@ -95,7 +94,6 @@ jobs:
       - name: Check Test Results
         if: always()
         run: echo "✅ Backend build and test completed"
-
 
   frontend-deploy:
     runs-on: ubuntu-latest
@@ -118,7 +116,7 @@ jobs:
         run: npm run build
         working-directory: NexFundFrontend
         env:
-          VITE_BASE_URL: "http://YOUR_EC2_PUBLIC_IP:8080" # Replace with EC2 public IP for API calls
+          VITE_BASE_URL: "/" # Ensure base URL set for SPA routing
 
       - name: List dist contents
         run: ls -la NexFundFrontend/dist
