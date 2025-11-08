@@ -1,4 +1,4 @@
-name: CI/CD Pipeline - Fundly
+name: CI/CD Pipeline - NexFund
 
 on:
   push:
@@ -37,7 +37,7 @@ jobs:
           distribution: 'oracle'
           cache: maven
 
-      - name: Wait for MySQL
+      - name: Wait for MySQL to be ready
         run: |
           sleep 10
           echo "MySQL service ready"
@@ -57,7 +57,7 @@ jobs:
       - name: Verify JAR Created
         run: |
           if [ -f NexFundBackend/target/fundly-0.0.1-SNAPSHOT.jar ]; then
-            echo "✅ JAR built successfully: fundly-0.0.1-SNAPSHOT.jar"
+            echo "✅ JAR built successfully"
           else
             echo "❌ JAR not found"
             exit 1
@@ -69,7 +69,51 @@ jobs:
             echo "✅ JaCoCo coverage report generated"
           fi
 
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build Docker image for backend
+        run: docker build -t nexfund-backend .
+        working-directory: NexFundBackend
+
+      - name: Tag Docker image for ECR
+        run: docker tag nexfund-backend:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/nexfund-repo:latest
+
+      - name: Push Docker image to ECR
+        run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/nexfund-repo:latest
+
       - name: Check Test Results
         if: always()
-        run: |
-          echo "✅ All tests completed successfully"
+        run: echo "✅ Backend build and test completed"
+
+  frontend-deploy:
+    runs-on: ubuntu-latest
+    needs: test-build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: NexFundFrontend
+
+      - name: Build frontend for production
+        run: npm run build
+        working-directory: NexFundFrontend
+
+      - name: Deploy frontend to S3
+        uses: jakejarvis/s3-sync-action@v0.6.0
+        with:
+          args: --acl public-read --delete
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ap-south-1
+          SOURCE_DIR: NexFundFrontend/dist
