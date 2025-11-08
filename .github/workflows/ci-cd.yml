@@ -29,6 +29,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v3
@@ -68,6 +70,9 @@ jobs:
           if [ -f NexFundBackend/target/jacoco/index.html ]; then
             echo "✅ JaCoCo coverage report generated"
           fi
+
+      - name: Show backend files
+        run: ls -la NexFundBackend
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
@@ -112,7 +117,7 @@ jobs:
         working-directory: NexFundFrontend
 
       - name: Deploy frontend to S3
-        uses: jakejarvis/s3-sync-action@v0.6.0
+        uses: jakejarvis/s3-sync-action@v0.5.1
         with:
           args: --acl public-read --delete
         env:
