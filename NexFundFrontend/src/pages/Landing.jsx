@@ -107,7 +107,7 @@ const Landing = () => {
     setIsLoadingFeedbacks(true);
     try {
       console.log('🔍 Fetching approved feedbacks...');
-      const response = await fetch('http://localhost:8080/feedback/approved');
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/feedback/approved`);
       
       if (response.ok) {
         const data = await response.json();
@@ -137,7 +137,7 @@ const Landing = () => {
   const fetchStats = async () => {
     try {
       console.log('🔍 Fetching stats...');
-      const response = await fetch('http://localhost:8080/stats');
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/stats`);
       if (response.ok) {
         const data = await response.json();
         setStats({
@@ -233,7 +233,7 @@ const Landing = () => {
 
     try {
       console.log('📤 Submitting feedback:', feedbackData);
-      const response = await fetch('http://localhost:8080/feedback', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/feedback`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

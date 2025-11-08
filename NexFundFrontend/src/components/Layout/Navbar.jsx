@@ -70,13 +70,14 @@ const Navbar = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:8080/getProfile', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/getProfile`, {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  }
+});
+
 
       if (response.ok) {
         const userData = await response.json();
@@ -170,7 +171,7 @@ const Navbar = () => {
                  localStorage.getItem('auth_token') ||
                  localStorage.getItem('authToken');
 
-      const response = await fetch('http://localhost:8080/updateProfile', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/updateProfile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

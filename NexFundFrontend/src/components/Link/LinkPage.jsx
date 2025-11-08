@@ -151,14 +151,14 @@ const LinkPage = () => {
       
       if (fundraiser.backendTable === 'events') {
         if (fundraiser.isFixedAmount && roundedAmount === fundraiser.amount) {
-          exactUrl = `http://localhost:8080/api/upi/event/${fundraiser.id}/qr`;
+          exactUrl = `${import.meta.env.VITE_BACKEND_URL}/api/upi/event/${fundraiser.id}/qr`;
           response = await api.generateEventQRCode(fundraiser.id);
         } else {
-          exactUrl = `http://localhost:8080/api/upi/event/${fundraiser.id}/qr/amount/${Math.round(roundedAmount)}`;
+          exactUrl = `${import.meta.env.VITE_BACKEND_URL}/api/upi/event/${fundraiser.id}/qr/amount/${Math.round(roundedAmount)}`;
           response = await api.generateEventQRCodeWithAmount(fundraiser.id, Math.round(roundedAmount));
         }
       } else {
-        exactUrl = `http://localhost:8080/api/upi/gift/${fundraiser.id}/qr`;
+        exactUrl = `${import.meta.env.VITE_BACKEND_URL}/api/upi/gift/${fundraiser.id}/qr`;
         response = await api.generateGiftQRCode(fundraiser.id);
       }
 
