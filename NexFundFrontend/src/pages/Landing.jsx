@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Gift, Calendar, Heart, Moon, Sun, Zap, Users, CheckCircle, Mail, Smile, Link2, Star, Send, X } from 'lucide-react';
-import './Landing.css';
+import './landing.css';
 import toast from 'react-hot-toast';
 
 const textVariants = {
