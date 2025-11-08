@@ -14,10 +14,15 @@ FROM eclipse-temurin:21-jdk as build
 
 WORKDIR /app
 
-COPY mvnw pom.xml ./
-COPY .mvn .mvn/
-COPY src ./src
+# Copy Maven wrapper and configuration files
+COPY .mvn/ .mvn/
+COPY mvnw .
+COPY pom.xml .
 
+# Copy source code directory
+COPY src/ ./src/
+
+# Make Maven wrapper executable, then build JAR
 RUN chmod +x mvnw && ./mvnw clean package -DskipTests
 
 # Stage 2: run app using the produced JAR
