@@ -2,9 +2,9 @@ name: CI/CD Pipeline - NexFund
 
 on:
   push:
-    branches: [ main, feature-1.0 ]
+    branches: [main, feature-1.0]
   pull_request:
-    branches: [ main, feature-1.0 ]
+    branches: [main, feature-1.0]
 
 jobs:
   test-build:
@@ -115,6 +115,11 @@ jobs:
       - name: Build frontend for production
         run: npm run build
         working-directory: NexFundFrontend
+        env:
+          VITE_BASE_URL: "/" # Ensure base URL set for SPA routing
+
+      - name: List dist contents
+        run: ls -la NexFundFrontend/dist
 
       - name: Deploy frontend to S3
         uses: jakejarvis/s3-sync-action@v0.5.1
@@ -126,3 +131,14 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ap-south-1
           SOURCE_DIR: NexFundFrontend/dist
+
+      # Optional: Uncomment if using CloudFront and want to invalidate cache
+      # - name: Invalidate CloudFront cache
+      #   uses: chetan/invalidate-cloudfront-action@v1
+      #   with:
+      #     distribution-id: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+      #     paths: '/*'
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
