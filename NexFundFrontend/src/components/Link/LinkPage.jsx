@@ -63,13 +63,37 @@ const LinkPage = () => {
   const shareUrl = `${window.location.origin}/link/${fundraiser.id}`;
 
   const handleCopyLink = async () => {
-    try {
+  try {
+    // Secure context (HTTPS / localhost)
+    if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(shareUrl);
       toast.success('Link copied to clipboard!');
-    } catch (error) {
-      toast.error('Failed to copy link');
+    } else {
+      // Fallback for HTTP / mobile browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = shareUrl;
+      textArea.style.position = 'fixed';
+      textArea.style.top = 0;
+      textArea.style.left = 0;
+      textArea.style.opacity = 0;
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+
+      if (successful) {
+        toast.success('Link copied successfully!');
+      } else {
+        toast.error('Unable to copy link automatically. Please copy manually.');
+      }
     }
-  };
+  } catch (error) {
+    toast.error('Failed to copy link');
+  }
+};
+
 
   const validateUpiId = (upiId) => {
     if (!upiId || typeof upiId !== 'string' || !upiId.trim()) {

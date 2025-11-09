@@ -51,28 +51,35 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
 
-                        // ✅ PUBLIC LANDING PAGE ENDPOINTS - NO AUTHENTICATION REQUIRED
-                        .requestMatchers("/stats").permitAll()
-                        .requestMatchers("/feedback").permitAll()
-                        .requestMatchers("/feedback/approved").permitAll()
+                        // ✅ Public landing & shared data (no login needed)
+                        .requestMatchers(
+                                "/stats",
+                                "/feedback",
+                                "/feedback/approved",
+                                "/events/allEvents",
+                                "/gifts/allGifts"
+                        ).permitAll()
 
-                        // ✅ PROFILE ENDPOINTS - AUTHENTICATED REQUIRED
+                        // ✅ Profile - Authenticated only
                         .requestMatchers("/getProfile", "/updateProfile").authenticated()
 
-                        // Protected endpoints
+                        // ✅ Protected modules - require auth
                         .requestMatchers("/events/**", "/gifts/**", "/donations/**", "/participants/**", "/api/upi/**").authenticated()
+
+                        // Everything else defaults to auth
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
+                // ✅ OAuth2 login setup
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oauth2AuthenticationSuccessHandler)
-                        // production failure URL -> redirect back to your live frontend with error
+                        // failure redirect to your live frontend
                         .failureUrl("http://nexfund-frontend-bucket.s3-website.ap-south-1.amazonaws.com/?error=oauth2_failed")
                 )
 
-                // JWT Filter
+                // ✅ Add JWT filter before username/password auth
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -91,6 +98,7 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
+    // ✅ Updated CORS - covers local dev + AWS S3 (http + https)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -98,7 +106,7 @@ public class SecurityConfig {
                 "http://localhost:3000",
                 "http://localhost:8080",
                 "http://nexfund-frontend-bucket.s3-website.ap-south-1.amazonaws.com",
-                "https://nexfund-frontend-bucket.s3-website.ap-south-1.amazonaws.com" // future-proof for HTTPS via CloudFront
+                "https://nexfund-frontend-bucket.s3-website.ap-south-1.amazonaws.com" // for future CloudFront HTTPS
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
@@ -108,5 +116,4 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-
 }
