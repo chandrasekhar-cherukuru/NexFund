@@ -171,8 +171,13 @@ jobs:
             docker stop nexfund-backend || true
             docker rm nexfund-backend || true
 
-            echo "🐳 Starting new backend container..."
+            echo "🐳 Starting new backend container with environment secrets..."
             docker run -d --name nexfund-backend -p 8080:8080 \
+              -e GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} \
+              -e GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} \
+              -e SMTP_USERNAME=${{ secrets.SMTP_USERNAME }} \
+              -e SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }} \
+              -e AWS_REGION=ap-south-1 \
               ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/nexfund-repo:latest
 
             echo "✅ Deployment complete! Running containers:"
