@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { Gift, Calendar, Heart, Moon, Sun, Zap, Users, CheckCircle, Mail, Smile, Link2, Star, Send, X } from 'lucide-react';
 import './landing.css';
 import toast from 'react-hot-toast';
+import { useNavigate } from "react-router-dom";
+
 
 const textVariants = {
   initial: {
@@ -204,13 +206,15 @@ const Landing = () => {
     applyTheme(newMode);
   };
 
+  const navigate = useNavigate();
+  
   const handleSignIn = () => {
-    window.location.href = '/login';
-  };
+  navigate("/login");
+};
 
   const handleCreateAccount = () => {
-    window.location.href = 'http://localhost:3000/register';
-  };
+  navigate("/register");
+};
 
   const handleFeedbackChange = (e) => {
     const { name, value } = e.target;
