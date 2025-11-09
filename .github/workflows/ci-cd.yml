@@ -136,14 +136,17 @@ jobs:
           timeout: 60s
           command_timeout: 30m
           script: |
-            echo "🚀 Pulling latest backend image"
+            echo "🚀 Logging in to AWS ECR..."
+            aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com
+
+            echo "🚀 Pulling latest backend image..."
             docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/nexfund-repo:latest
 
-            echo "🧹 Removing old container"
+            echo "🧹 Removing old container..."
             docker stop nexfund-backend || true
             docker rm nexfund-backend || true
 
-            echo "🐳 Starting new backend with env vars"
+            echo "🐳 Starting new backend container..."
             docker run -d --name nexfund-backend -p 8080:8080 \
               -e GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
               -e GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
@@ -152,4 +155,5 @@ jobs:
               -e AWS_REGION="ap-south-1" \
               ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/nexfund-repo:latest
 
+            echo "✅ Deployment complete! Running containers:"
             docker ps
