@@ -76,7 +76,8 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oauth2AuthenticationSuccessHandler)
                         // failure redirect to your live frontend
-                        .failureUrl("http://nexfund-frontend-bucket.s3-website.ap-south-1.amazonaws.com/?error=oauth2_failed")
+                        //.failureUrl("http://nexfund-frontend-bucket.s3-website.ap-south-1.amazonaws.com/?error=oauth2_failed") // old
+                        .failureUrl("https://www.nexfund.site/?error=oauth2_failed") // new updated production URL
                 )
 
                 // ✅ Add JWT filter before username/password auth
@@ -98,15 +99,25 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    // ✅ Updated CORS - covers local dev + AWS S3 (http + https)
+    // Updated CORS configurations with previous commented out
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+
+        // Old CORS config - commented out
+        /*
         configuration.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:3000",
                 "http://localhost:8080",
                 "http://nexfund-frontend-bucket.s3-website.ap-south-1.amazonaws.com",
-                "https://nexfund-frontend-bucket.s3-website.ap-south-1.amazonaws.com" // for future CloudFront HTTPS
+                "https://nexfund-frontend-bucket.s3-website.ap-south-1.amazonaws.com"
+        ));
+        */
+
+        // New CORS config for production + optional local dev
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+                "https://www.nexfund.site",
+                "http://localhost:3000" // Optional - remove if you don't want local dev access
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
@@ -117,3 +128,4 @@ public class SecurityConfig {
         return source;
     }
 }
+
