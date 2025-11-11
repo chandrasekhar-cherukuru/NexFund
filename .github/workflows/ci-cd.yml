@@ -75,7 +75,7 @@ jobs:
         run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/nexfund-repo:latest
 
   # ------------------------------
-  # 2️⃣ FRONTEND: Build + Deploy to S3
+  # 2️⃣ FRONTEND: Build + Deploy to S3 + CloudFront Invalidation
   # ------------------------------
   frontend-deploy:
     runs-on: ubuntu-latest
@@ -110,6 +110,15 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ap-south-1
           SOURCE_DIR: NexFundFrontend/dist
+
+      - name: Invalidate CloudFront cache
+        uses: chetan/invalidate-cloudfront-action@v1
+        with:
+          distribution: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+          paths: '/*'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
   # ------------------------------
   # 3️⃣ DEPLOY TO EC2
