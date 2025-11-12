@@ -3,7 +3,7 @@ package com.chakri.fundly.config;
 import com.chakri.fundly.model.AuthProvider;
 import com.chakri.fundly.model.Users;
 import com.chakri.fundly.repo.UserRepo;
-import com.chakri.fundly.security.CustomOAuth2User;
+import com.chakri.fundly.config.CustomOAuth2User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
