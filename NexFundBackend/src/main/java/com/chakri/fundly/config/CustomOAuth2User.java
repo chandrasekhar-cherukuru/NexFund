@@ -1,4 +1,4 @@
-package com.chakri.fundly.security;
+package com.chakri.fundly.config;
 
 import com.chakri.fundly.model.Users;
 import org.springframework.security.core.GrantedAuthority;
