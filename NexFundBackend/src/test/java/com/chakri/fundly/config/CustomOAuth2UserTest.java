@@ -1,7 +1,7 @@
 package com.chakri.fundly.config;
 
 import com.chakri.fundly.model.Users;
-import com.chakri.fundly.security.CustomOAuth2User;
+import com.chakri.fundly.config.CustomOAuth2User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
