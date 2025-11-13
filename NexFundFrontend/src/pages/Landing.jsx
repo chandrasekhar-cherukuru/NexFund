@@ -48,11 +48,10 @@ const scrollButtonVariants = {
 };
 
 const Landing = () => {
-  // Auth
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  // User profile state
+  // ============= PROFILE STATE =============
   const [profileData, setProfileData] = useState({
     profileImage: null,
     name: '',
@@ -70,7 +69,7 @@ const Landing = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Landing page state
+  // ============= LANDING PAGE STATE =============
   const [stats, setStats] = useState({
     events: 0,
     donations: 0,
@@ -130,7 +129,6 @@ const Landing = () => {
                  localStorage.getItem('authToken');
       
       if (!token) {
-        console.error('❌ No token found');
         setIsFetchingProfile(false);
         return;
       }
@@ -145,7 +143,6 @@ const Landing = () => {
 
       if (response.ok) {
         const userData = await response.json();
-        console.log('✅ User profile fetched:', userData);
         setProfileData({
           profileImage: userData.profileImage || null,
           name: userData.name || '',
@@ -158,11 +155,9 @@ const Landing = () => {
           username: userData.username || '',
           email: userData.email || ''
         });
-      } else {
-        console.error('❌ Failed to fetch profile:', response.status);
       }
     } catch (error) {
-      console.error('❌ Error fetching profile:', error);
+      console.error('Error fetching profile:', error);
     } finally {
       setIsFetchingProfile(false);
     }
@@ -233,8 +228,6 @@ const Landing = () => {
   };
 
   // ============= LANDING PAGE FUNCTIONS =============
-
-  // Icon rotation effect
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIconIndex((prevIndex) => (prevIndex + 1) % icons.length);
@@ -242,36 +235,27 @@ const Landing = () => {
     return () => clearInterval(interval);
   }, [icons.length]);
 
-  // Fetch approved feedbacks
   const fetchApprovedFeedbacks = async () => {
     setIsLoadingFeedbacks(true);
     try {
-      console.log('🔍 Fetching approved feedbacks...');
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/feedback/approved`);
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Feedbacks received:', data);
-
         const sortedFeedbacks = data.sort((a, b) => {
           return new Date(b.createdAt) - new Date(a.createdAt);
         });
-
         setAllUserFeedbacks(sortedFeedbacks);
         setFeedbackCount(data.length);
-      } else {
-        console.error('❌ Failed to fetch feedbacks, status:', response.status);
       }
     } catch (error) {
-      console.error('❌ Error fetching feedbacks:', error);
+      console.error('Error fetching feedbacks:', error);
     } finally {
       setIsLoadingFeedbacks(false);
     }
   };
 
-  // Fetch stats
   const fetchStats = async () => {
     try {
-      console.log('🔍 Fetching stats...');
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/stats`);
       if (response.ok) {
         const data = await response.json();
@@ -280,16 +264,13 @@ const Landing = () => {
           donations: data.donations || 0,
           giftPools: data.giftPools || 0,
         });
-        console.log('✅ Stats fetched:', data);
       }
     } catch (error) {
-      console.error('❌ Error fetching stats:', error);
+      console.error('Error fetching stats:', error);
     }
   };
 
-  // Initial load
   useEffect(() => {
-    console.log('🔍 Landing page mounted - fetching initial data');
     fetchStats();
     fetchApprovedFeedbacks();
     if (user) {
@@ -297,20 +278,16 @@ const Landing = () => {
     }
   }, [user]);
 
-  // Listen for feedback submission events
   useEffect(() => {
     const handleFeedbackSubmitted = () => {
-      console.log('📢 Feedback submitted event received - refreshing feedbacks');
       fetchApprovedFeedbacks();
     };
-
     window.addEventListener('feedbackSubmitted', handleFeedbackSubmitted);
     return () => {
       window.removeEventListener('feedbackSubmitted', handleFeedbackSubmitted);
     };
   }, []);
 
-  // Dark mode setup
   useEffect(() => {
     const saved = localStorage.getItem('isDarkMode');
     if (saved !== null) {
@@ -380,7 +357,6 @@ const Landing = () => {
       const data = await response.json();
 
       if (response.ok) {
-        console.log('✅ Feedback submitted successfully');
         toast.success('Thank you! Your feedback has been submitted! 🙏');
         setShowFeedbackModal(false);
         setFeedbackData({
@@ -392,11 +368,10 @@ const Landing = () => {
         });
         await fetchApprovedFeedbacks();
       } else {
-        console.error('❌ Feedback submission error:', data);
         toast.error(data.error || 'Failed to submit feedback');
       }
     } catch (error) {
-      console.error('❌ Error submitting feedback:', error);
+      console.error('Error submitting feedback:', error);
       toast.error('Error submitting feedback');
     } finally {
       setIsSubmittingFeedback(false);
@@ -570,22 +545,23 @@ const Landing = () => {
               </div>
             </button>
 
-            {/* USER PROFILE BUTTON - POSITIONED BETWEEN TOGGLE AND SIGN IN */}
-            {user ? (
-              <button 
-                onClick={() => setShowProfileModal(!showProfileModal)}
-                className="profile-button"
-              >
-                {profileData.profileImage ? (
-                  <img src={profileData.profileImage} alt={profileData.name} className="profile-image" />
-                ) : (
-                  <Users className="profile-icon" size={20} />
-                )}
-                <span className="profile-name">{profileData.name || 'User'}</span>
-              </button>
-            ) : null}
+            {/* USER PROFILE BUTTON - ALWAYS VISIBLE */}
+            <button 
+              onClick={() => user && setShowProfileModal(!showProfileModal)}
+              className={`profile-button ${user ? 'logged-in' : 'logged-out'}`}
+              title={user ? 'View profile' : 'Login to view profile'}
+            >
+              {profileData.profileImage && user ? (
+                <img src={profileData.profileImage} alt={profileData.name} className="profile-image" />
+              ) : (
+                <Users className="profile-icon" size={20} />
+              )}
+              <span className="profile-name">
+                {user ? profileData.name || 'User' : 'User'}
+              </span>
+            </button>
 
-            {/* SIGN IN / SIGN UP BUTTONS */}
+            {/* SIGN IN / SIGN UP BUTTONS - ONLY SHOW WHEN NOT LOGGED IN */}
             {!user && (
               <>
                 <button onClick={handleSignIn} className="nav-button login-btn">

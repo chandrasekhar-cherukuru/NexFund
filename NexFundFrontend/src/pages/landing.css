@@ -2048,7 +2048,7 @@ html.light .feature-description {
     font-size: 13px;
   }
 }
-/* ============= PROFILE BUTTON STYLES ============= */
+/* ============= PROFILE BUTTON STYLES - NEW ============= */
 .profile-button {
   display: flex;
   align-items: center;
@@ -2071,6 +2071,16 @@ html.light .feature-description {
   transform: translateY(-2px);
 }
 
+.profile-button.logged-out {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.profile-button.logged-out:hover {
+  opacity: 0.8;
+  transform: none;
+}
+
 .profile-image {
   width: 28px;
   height: 28px;
@@ -2090,7 +2100,7 @@ html.light .feature-description {
   text-overflow: ellipsis;
 }
 
-/* ============= PROFILE MODAL STYLES ============= */
+/* ============= PROFILE MODAL OVERLAY & MODAL ============= */
 .profile-modal-overlay {
   position: fixed;
   inset: 0;
@@ -2148,6 +2158,7 @@ html.light .feature-description {
   width: 16px;
   height: 16px;
   animation: spin 0.8s linear infinite;
+  margin-right: 6px;
 }
 
 @keyframes spin {
@@ -2348,7 +2359,7 @@ html.light .feature-description {
   flex: 1;
 }
 
-/* ============= REVIEW STARS ============= */
+/* ============= REVIEW RATING & STARS ============= */
 .review-rating {
   display: flex;
   justify-content: space-between;
@@ -2391,7 +2402,7 @@ html.light .feature-description {
   min-height: 200px;
 }
 
-/* ============= FEEDBACK MODAL STYLES ============= */
+/* ============= FEEDBACK MODAL ============= */
 .feedback-modal-overlay {
   position: fixed;
   inset: 0;
@@ -2578,7 +2589,7 @@ html.light .feature-description {
   cursor: not-allowed;
 }
 
-/* LIGHT MODE - PROFILE & FEEDBACK STYLES */
+/* ============= LIGHT MODE - PROFILE & FEEDBACK ============= */
 html.light .profile-button {
   background: rgba(59, 130, 246, 0.1);
   border-color: rgba(59, 130, 246, 0.3);
@@ -2639,7 +2650,7 @@ html.light .feedback-star {
   border-color: #e5e7eb;
 }
 
-/* RESPONSIVE PROFILE */
+/* ============= RESPONSIVE ============= */
 @media (max-width: 768px) {
   .profile-button {
     padding: 6px 10px;
