@@ -457,7 +457,7 @@ const LinkPage = () => {
               </div>
             )}
 
-            {/* Stats */}
+            {/* Stats
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg">
                 <div className="flex items-center space-x-2">
@@ -478,7 +478,7 @@ const LinkPage = () => {
                   {fundraiser.participants}
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* UPI Warning */}
             {!upiValidation.valid && (
@@ -557,7 +557,8 @@ const LinkPage = () => {
                     <span>Calling Backend...</span>
                   </>
                 ) : (
-                  <span>{upiValidation.valid ? '🎯 Call Backend QR API' : 'Creator needs to add UPI ID'}</span>
+                  // <span>{upiValidation.valid ? '🎯 Call Backend QR API' : 'Creator needs to add UPI ID'}</span>
+                  <span>{upiValidation.valid ? 'Pay Now' : 'Creator needs to add UPI ID'}</span>
                 )}
               </button>
             </form>
@@ -679,7 +680,7 @@ const LinkPage = () => {
               {/* Status */}
               <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg">
                 <p className="text-sm text-green-800 dark:text-green-300 text-center font-bold">
-                  🎯 Successfully called your backend QR APIs!
+                  {/* 🎯 Successfully called your backend QR APIs! */}
                 </p>
               </div>
 
