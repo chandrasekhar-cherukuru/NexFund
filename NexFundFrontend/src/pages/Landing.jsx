@@ -290,13 +290,18 @@ const Landing = () => {
     setFormStatus('sending');
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/query`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const token = localStorage.getItem('token'); // Or however you store JWT
+
+const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/query`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` }), // Add this line
+  },
+  body: JSON.stringify(formData),
+});
+
+
 
       if (response.ok) {
         setFormStatus('success');
