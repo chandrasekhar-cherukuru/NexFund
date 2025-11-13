@@ -4,10 +4,13 @@ import { motion } from 'framer-motion';
 import { Gift, Calendar, Heart, Moon, Sun, Zap, Users, CheckCircle, Mail, Smile, Link2, Star, Send, X } from 'lucide-react';
 import './landing.css';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 
 const textVariants = {
-  initial: { x: -500, opacity: 0 },
+  initial: {
+    x: -500,
+    opacity: 0,
+  },
   animate: {
     x: 0,
     opacity: 1,
@@ -19,9 +22,11 @@ const textVariants = {
 };
 
 const sliderVariants = {
-  initial: { x: 150 },
+  initial: {
+    x: '150%',
+  },
   animate: {
-    x: -100,
+    x: '-100%',
     transition: {
       ease: 'linear',
       repeat: Infinity,
@@ -42,7 +47,12 @@ const scrollButtonVariants = {
 };
 
 const Landing = () => {
-  const [stats, setStats] = useState({ events: 0, donations: 0, giftPools: 0 });
+  const [stats, setStats] = useState({
+    events: 0,
+    donations: 0,
+    giftPools: 0,
+  });
+
   const [currentIconIndex, setCurrentIconIndex] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -50,6 +60,7 @@ const Landing = () => {
   const [allUserFeedbacks, setAllUserFeedbacks] = useState([]);
   const [feedbackCount, setFeedbackCount] = useState(0);
   const [isLoadingFeedbacks, setIsLoadingFeedbacks] = useState(false);
+
   const [feedbackData, setFeedbackData] = useState({
     name: '',
     email: '',
@@ -57,6 +68,7 @@ const Landing = () => {
     type: 'event',
     rating: 5,
   });
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -67,18 +79,21 @@ const Landing = () => {
   const [formStatus, setFormStatus] = useState('');
 
   const icons = [
-    { 
-      component: <Gift className="h-10 w-10 text-purple-400" />, 
+    {
+      component: Gift,
+      className: 'h-10 w-10 text-purple-400',
       label: 'Gift Pooling',
     },
-    { 
-      component: <Calendar className="h-10 w-10 text-blue-400" />, 
+    {
+      component: Calendar,
+      className: 'h-10 w-10 text-blue-400',
       label: 'Events',
     },
-    { 
-      component: <Heart className="h-10 w-10 text-red-400" />, 
+    {
+      component: Heart,
+      className: 'h-10 w-10 text-red-400',
       label: 'Donations',
-    }
+    },
   ];
 
   // Icon rotation effect
@@ -86,7 +101,6 @@ const Landing = () => {
     const interval = setInterval(() => {
       setCurrentIconIndex((prevIndex) => (prevIndex + 1) % icons.length);
     }, 2000);
-
     return () => clearInterval(interval);
   }, [icons.length]);
 
@@ -94,26 +108,27 @@ const Landing = () => {
   const fetchApprovedFeedbacks = async () => {
     setIsLoadingFeedbacks(true);
     try {
-      console.log('Fetching approved feedbacks...');
+      console.log('🔍 Fetching approved feedbacks...');
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/feedback/approved`);
       if (response.ok) {
         const data = await response.json();
-        console.log('Feedbacks received:', data);
-        
+        console.log('✅ Feedbacks received:', data);
+
         // Sort by createdAt descending (newest first)
         const sortedFeedbacks = data.sort((a, b) => {
           return new Date(b.createdAt) - new Date(a.createdAt);
         });
-        
+
         setAllUserFeedbacks(sortedFeedbacks);
         setFeedbackCount(data.length);
-        console.log('Total feedback count:', data.length);
-        console.log('Latest 3 feedbacks:', sortedFeedbacks.slice(0, 3));
+
+        console.log('✅ Total feedback count:', data.length);
+        console.log('✅ Latest 3 feedbacks:', sortedFeedbacks.slice(0, 3));
       } else {
-        console.error('Failed to fetch feedbacks, status:', response.status);
+        console.error('❌ Failed to fetch feedbacks, status:', response.status);
       }
     } catch (error) {
-      console.error('Error fetching feedbacks:', error);
+      console.error('❌ Error fetching feedbacks:', error);
     } finally {
       setIsLoadingFeedbacks(false);
     }
@@ -122,7 +137,7 @@ const Landing = () => {
   // Fetch stats from backend
   const fetchStats = async () => {
     try {
-      console.log('Fetching stats...');
+      console.log('🔍 Fetching stats...');
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/stats`);
       if (response.ok) {
         const data = await response.json();
@@ -131,16 +146,16 @@ const Landing = () => {
           donations: data.donations || 0,
           giftPools: data.giftPools || 0,
         });
-        console.log('Stats fetched:', data);
+        console.log('✅ Stats fetched:', data);
       }
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      console.error('❌ Error fetching stats:', error);
     }
   };
 
   // Initial load - fetch stats and feedbacks
   useEffect(() => {
-    console.log('Landing page mounted - fetching initial data');
+    console.log('🔍 Landing page mounted - fetching initial data');
     fetchStats();
     fetchApprovedFeedbacks();
   }, []);
@@ -148,12 +163,14 @@ const Landing = () => {
   // Listen for feedback submission events
   useEffect(() => {
     const handleFeedbackSubmitted = () => {
-      console.log('Feedback submitted event received - refreshing feedbacks');
+      console.log('📢 Feedback submitted event received - refreshing feedbacks');
       fetchApprovedFeedbacks();
     };
 
     window.addEventListener('feedbackSubmitted', handleFeedbackSubmitted);
-    return () => window.removeEventListener('feedbackSubmitted', handleFeedbackSubmitted);
+    return () => {
+      window.removeEventListener('feedbackSubmitted', handleFeedbackSubmitted);
+    };
   }, []);
 
   // Dark mode setup
@@ -190,27 +207,34 @@ const Landing = () => {
   const navigate = useNavigate();
 
   const handleSignIn = () => {
-    navigate('/login');
+    navigate("/login");
   };
 
   const handleCreateAccount = () => {
-    navigate('/register');
+    navigate("/register");
   };
 
   const handleFeedbackChange = (e) => {
     const { name, value } = e.target;
-    setFeedbackData((prev) => ({ ...prev, [name]: value }));
+    setFeedbackData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleFeedbackRating = (rating) => {
-    setFeedbackData((prev) => ({ ...prev, rating }));
+    setFeedbackData((prev) => ({
+      ...prev,
+      rating,
+    }));
   };
 
   const handleFeedbackSubmit = async (e) => {
     e.preventDefault();
     setIsSubmittingFeedback(true);
+
     try {
-      console.log('Submitting feedback:', feedbackData);
+      console.log('📤 Submitting feedback:', feedbackData);
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/feedback`, {
         method: 'POST',
         headers: {
@@ -222,8 +246,8 @@ const Landing = () => {
       const data = await response.json();
 
       if (response.ok) {
-        console.log('Feedback submitted successfully');
-        toast.success('Thank you! Your feedback has been submitted!');
+        console.log('✅ Feedback submitted successfully');
+        toast.success('Thank you! Your feedback has been submitted! 🙏');
         setShowFeedbackModal(false);
         setFeedbackData({
           name: '',
@@ -235,11 +259,11 @@ const Landing = () => {
         // Refresh feedbacks after submission
         await fetchApprovedFeedbacks();
       } else {
-        console.error('Feedback submission error:', data);
+        console.error('❌ Feedback submission error:', data);
         toast.error(data.error || 'Failed to submit feedback');
       }
     } catch (error) {
-      console.error('Error submitting feedback:', error);
+      console.error('❌ Error submitting feedback:', error);
       toast.error('Error submitting feedback');
     } finally {
       setIsSubmittingFeedback(false);
@@ -253,14 +277,17 @@ const Landing = () => {
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
-    // ✅ CHECK IF USER IS LOGGED IN
-    const token = localStorage.getItem('jwt_token'); // Fixed: Use 'jwt_token' not 'token'
+    // Check if user is logged in with 'jwt_token'
+    const token = localStorage.getItem('jwt_token');
 
     if (!token) {
       toast.error('Please login to send a query');
@@ -330,8 +357,7 @@ const Landing = () => {
     },
   ];
 
-  // Get latest 3 feedbacks (newest first) OR show default if no feedbacks
-  const displayedReviews = allUserFeedbacks.length > 0 
+  const displayedReviews = allUserFeedbacks.length > 0
     ? allUserFeedbacks.slice(0, 3)
     : defaultReviews;
 
@@ -382,12 +408,12 @@ const Landing = () => {
 
   return (
     <div className="landing-page">
-      {/* NAVBAR */}
       <nav className="navbar">
         <div className="navbar-container">
           <div className="navbar-logo">
             <div className="logo-icon">
-              {icons[currentIconIndex].component}
+              {icons[currentIconIndex].component &&
+                React.createElement(icons[currentIconIndex].component, { className: icons[currentIconIndex].className })}
             </div>
             <div className="logo-text">
               <span className="logo-title">NexFund</span>
@@ -395,12 +421,23 @@ const Landing = () => {
             </div>
           </div>
           <div className="navbar-links">
-            <button onClick={toggleDarkMode} className="theme-toggle-btn" title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}>
+            <button
+              onClick={toggleDarkMode}
+              className="theme-toggle-btn"
+              title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
               <div className="toggle-icon">
-                <Sun className={`sun-icon ${isDarkMode ? 'hidden' : 'visible'}`} size={20} />
-                <Moon className={`moon-icon ${isDarkMode ? 'visible' : 'hidden'}`} size={20} />
+                <Sun
+                  className={`sun-icon ${isDarkMode ? 'hidden' : 'visible'}`}
+                  size={20}
+                />
+                <Moon
+                  className={`moon-icon ${isDarkMode ? 'visible' : 'hidden'}`}
+                  size={20}
+                />
               </div>
             </button>
+
             <button onClick={handleSignIn} className="nav-button login-btn">
               Sign In
             </button>
@@ -411,7 +448,6 @@ const Landing = () => {
         </div>
       </nav>
 
-      {/* HERO SECTION */}
       <section className="hero-section">
         <motion.div
           className="sliding-text-container"
@@ -419,7 +455,7 @@ const Landing = () => {
           initial="initial"
           animate="animate"
         >
-          Raise Funds • Pool Gifts • Organize Events
+          Raise Funds Pool Gifts Organize Events
         </motion.div>
 
         <div className="hero-wrapper">
@@ -441,7 +477,6 @@ const Landing = () => {
             <motion.p variants={textVariants} className="description-highlight">
               Join thousands raising together.
             </motion.p>
-
             <motion.div variants={textVariants} className="hero-buttons">
               <motion.button
                 className="btn btn-primary"
@@ -449,7 +484,7 @@ const Landing = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                SIGN IN / LOGIN
+                SIGN IN LOGIN
               </motion.button>
               <motion.button
                 className="btn btn-secondary"
@@ -473,13 +508,16 @@ const Landing = () => {
                   <rect className="jar-container" x="20" y="30" width="80" height="90" rx="5" />
                   <rect className="jar-container" x="15" y="20" width="90" height="15" rx="3" />
                 </svg>
+                <div className="jar-fill"></div>
               </div>
-              <div className="jar-fill"></div>
 
               <div className="checkmark">
                 <svg width="60" height="60" viewBox="0 0 60 60">
                   <circle className="checkmark-circle" cx="30" cy="30" r="28" />
-                  <path className="checkmark-check" d="M15 30 L25 40 L45 20" />
+                  <path
+                    className="checkmark-check"
+                    d="M15 30 L25 40 L45 20"
+                  />
                 </svg>
               </div>
 
@@ -497,7 +535,7 @@ const Landing = () => {
               ))}
 
               {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-                <div key={`coin${i}`} className="coin" id={`coin${i}`}></div>
+                <div key={`coin${i}`} className={`coin coin${i}`}></div>
               ))}
             </div>
           </div>
@@ -625,62 +663,66 @@ const Landing = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
           </div>
         ) : (
-          <div className="reviews-grid">
-            {displayedReviews.map((review, index) => {
-              // Use type if available from feedback or default type styling
-              const reviewType = review.type || 'event';
-              return (
-                <motion.div
-                  key={`${review.id}-${index}`}
-                  className={`review-card review-${reviewType}`}
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.4, delay: index * 0.1 }}
-                  viewport={{ once: false }}
-                >
-                  <div className={`review-avatar avatar-${reviewType}`}>
-                    {review.name.split(' ').map((n) => n[0]).join('')}
-                  </div>
+          <>
+            <div className="reviews-grid">
+              {displayedReviews.map((review, index) => {
+                const reviewType = review.type || 'event';
 
-                  {/* Show stars only for user feedbacks */}
-                  {allUserFeedbacks.length > 0 && review.rating && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <p className="review-author">{review.name}</p>
-                      <div style={{ display: 'flex', gap: '2px' }}>
-                        {[...Array(review.rating)].map((_, i) => (
-                          <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                        ))}
-                      </div>
+                return (
+                  <motion.div
+                    key={`${review.id}-${index}`}
+                    className={`review-card review-${reviewType}`}
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                    viewport={{ once: false }}
+                  >
+                    <div className={`review-avatar avatar-${reviewType}`}>
+                      {review.name.split(' ').map(n => n[0]).join('')}
                     </div>
-                  )}
 
-                  {allUserFeedbacks.length === 0 && (
-                    <p className="review-author" style={{ marginBottom: '8px' }}>{review.name}</p>
-                  )}
+                    {/* Show stars only for user feedbacks */}
+                    {allUserFeedbacks.length > 0 && review.rating && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <p className="review-author">{review.name}</p>
+                        <div style={{ display: 'flex', gap: '2px' }}>
+                          {[...Array(review.rating)].map((_, i) => (
+                            <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-                  <p className="review-text">{review.message || review.text}</p>
-                  <p className="review-role">{review.role}</p>
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
+                    {allUserFeedbacks.length === 0 && (
+                      <p className="review-author" style={{ marginBottom: '8px' }}>{review.name}</p>
+                    )}
 
-        {/* SMALL COUNTER - AFTER THE THREE BOXES */}
-        {feedbackCount > 0 && (
-          <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <span style={{ 
-              fontSize: '0.65rem', 
-              backgroundColor: '#ef4444', 
-              color: 'white', 
-              borderRadius: '12px', 
-              padding: '3px 8px', 
-              display: 'inline-block', 
-              fontWeight: 'bold' 
-            }}>
-              {feedbackCount} total feedback{feedbackCount !== 1 ? 's' : ''}
-            </span>
-          </div>
+                    <p className="review-text">{review.message || review.text}</p>
+                    <p className="review-role">{review.role}</p>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* SMALL COUNTER - AFTER THE THREE BOXES */}
+            {feedbackCount > 0 && (
+              <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                <span
+                  style={{
+                    fontSize: '0.65rem',
+                    backgroundColor: '#ef4444',
+                    color: 'white',
+                    borderRadius: '12px',
+                    padding: '3px 8px',
+                    display: 'inline-block',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  {feedbackCount} total feedback{feedbackCount !== 1 ? 's' : ''}
+                </span>
+              </div>
+            )}
+          </>
         )}
       </section>
 
@@ -694,6 +736,7 @@ const Landing = () => {
           viewport={{ once: true }}
         >
           <h2>Have Any Queries?</h2>
+
           <form onSubmit={handleFormSubmit} className="query-form">
             <input
               type="text"
@@ -718,6 +761,7 @@ const Landing = () => {
               value={formData.phone}
               onChange={handleFormChange}
             />
+
             <select
               name="subject"
               value={formData.subject}
@@ -730,6 +774,7 @@ const Landing = () => {
               <option value="giftpools">Gift Pool Assistance</option>
               <option value="general">General Query</option>
             </select>
+
             <textarea
               name="message"
               placeholder="Your Message"
@@ -738,14 +783,17 @@ const Landing = () => {
               onChange={handleFormChange}
               required
             ></textarea>
-            <button
-              type="submit"
-              className="btn btn-primary query-submit-btn"
-            >
+
+            <button type="submit" className="btn btn-primary query-submit-btn">
               {formStatus === 'sending' ? 'Sending...' : 'Send Query'}
             </button>
-            {formStatus === 'success' && <p className="form-success">Query sent successfully!</p>}
-            {formStatus === 'error' && <p className="form-error">Error sending query. Please try again.</p>}
+
+            {formStatus === 'success' && (
+              <p className="form-success">✓ Query sent successfully!</p>
+            )}
+            {formStatus === 'error' && (
+              <p className="form-error">✗ Error sending query. Please try again.</p>
+            )}
           </form>
         </motion.div>
       </section>
@@ -772,7 +820,7 @@ const Landing = () => {
         </motion.div>
       </section>
 
-      {/* FEEDBACK MODAL - Shows when user logs out */}
+      {/* Feedback Modal (not changed) */}
       {showFeedbackModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -789,7 +837,7 @@ const Landing = () => {
             <form onSubmit={handleFeedbackSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Name
+                  Name *
                 </label>
                 <input
                   type="text"
@@ -804,22 +852,7 @@ const Landing = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={feedbackData.email}
-                  onChange={handleFeedbackChange}
-                  required
-                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="your@email.com"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Type of Feedback
+                  Type of Feedback *
                 </label>
                 <select
                   name="type"
@@ -836,7 +869,7 @@ const Landing = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Rating
+                  Rating *
                 </label>
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -845,19 +878,23 @@ const Landing = () => {
                       type="button"
                       onClick={() => handleFeedbackRating(star)}
                       className={`transition-all ${
-                        feedbackData.rating >= star ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'
+                        feedbackData.rating >= star
+                          ? 'text-yellow-400'
+                          : 'text-gray-300 dark:text-gray-600'
                       }`}
                     >
                       <Star className="h-6 w-6 fill-current" />
                     </button>
                   ))}
-                  <span className="ml-2 text-gray-600 dark:text-gray-400">{feedbackData.rating}/5</span>
+                  <span className="ml-2 text-gray-600 dark:text-gray-400">
+                    {feedbackData.rating} / 5
+                  </span>
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Your Feedback
+                  Your Feedback *
                 </label>
                 <textarea
                   name="message"
