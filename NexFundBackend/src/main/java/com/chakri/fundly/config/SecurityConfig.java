@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -25,7 +25,6 @@ import java.util.Arrays;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    text
     @Autowired
     private UserDetailsService userDetailsService;
 
@@ -45,14 +44,14 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable()) // CSRF disabled for API endpoints (development/testing)
+                .csrf(csrf -> csrf.disable()) // CSRF disabled globally
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/", "/login", "/register", "/error").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
 
-                        // Public landing & shared data (no login needed)
+                        // Public landing & shared data
                         .requestMatchers(
                                 "/stats",
                                 "/feedback",
@@ -61,19 +60,16 @@ public class SecurityConfig {
                                 "/gifts/allGifts"
                         ).permitAll()
 
-                        // If you want /api/query to be public, uncomment this line
+                        // Uncomment to make /api/query public:
                         // .requestMatchers("/api/query").permitAll()
 
-                        // Publicly accessible contact endpoint (if you have one)
-                        // .requestMatchers("/api/contact").permitAll()
-
-                        // Profile - Authenticated only
+                        // Profile endpoints require auth
                         .requestMatchers("/getProfile", "/updateProfile").authenticated()
 
-                        // Protected modules - require auth
+                        // Protected modules
                         .requestMatchers("/events/**", "/gifts/**", "/donations/**", "/participants/**", "/api/upi/**").authenticated()
 
-                        // Everything else defaults to auth
+                        // All other requests require authentication
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -82,11 +78,10 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oauth2AuthenticationSuccessHandler)
-                        // failure redirect to your live frontend
                         .failureUrl("https://www.nexfund.site/?error=oauth2_failed")
                 )
 
-                // Add JWT filter before username/password auth
+                // Add JWT filter
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -105,15 +100,14 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    // Centralized CORS configuration
+    // CORS configuration
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Public origins (adjust as needed)
         configuration.setAllowedOriginPatterns(Arrays.asList(
                 "https://www.nexfund.site",
-                "http://localhost:3000" // Optional - local development
+                "http://localhost:3000"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
