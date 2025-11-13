@@ -1,10 +1,11 @@
-// src/components/Landing.jsx
+// src/pages/Landing.jsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Gift, Calendar, Heart, Moon, Sun, Zap, Users, CheckCircle, Mail, Smile, Link2, Star, Send, X } from 'lucide-react';
+import { Gift, Calendar, Heart, Moon, Sun, Zap, Users, CheckCircle, Mail, Smile, Link2, Star, Send, X, LogOut, Camera, Edit2, Check } from 'lucide-react';
 import './landing.css';
 import toast from 'react-hot-toast';
 import { useNavigate } from "react-router-dom";
+import { useAuth } from '../contexts/AuthContext';
 
 const textVariants = {
   initial: {
@@ -47,6 +48,29 @@ const scrollButtonVariants = {
 };
 
 const Landing = () => {
+  // Auth
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  // User profile state
+  const [profileData, setProfileData] = useState({
+    profileImage: null,
+    name: '',
+    username: '',
+    email: ''
+  });
+  const [editData, setEditData] = useState({
+    profileImage: null,
+    name: '',
+    username: '',
+    email: ''
+  });
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [isFetchingProfile, setIsFetchingProfile] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Landing page state
   const [stats, setStats] = useState({
     events: 0,
     donations: 0,
@@ -96,6 +120,120 @@ const Landing = () => {
     },
   ];
 
+  // ============= PROFILE FUNCTIONS =============
+  const fetchUserData = async () => {
+    setIsFetchingProfile(true);
+    try {
+      let token = localStorage.getItem('token') || 
+                 localStorage.getItem('jwt_token') || 
+                 localStorage.getItem('auth_token') ||
+                 localStorage.getItem('authToken');
+      
+      if (!token) {
+        console.error('❌ No token found');
+        setIsFetchingProfile(false);
+        return;
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/getProfile`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('✅ User profile fetched:', userData);
+        setProfileData({
+          profileImage: userData.profileImage || null,
+          name: userData.name || '',
+          username: userData.username || '',
+          email: userData.email || ''
+        });
+        setEditData({
+          profileImage: userData.profileImage || null,
+          name: userData.name || '',
+          username: userData.username || '',
+          email: userData.email || ''
+        });
+      } else {
+        console.error('❌ Failed to fetch profile:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching profile:', error);
+    } finally {
+      setIsFetchingProfile(false);
+    }
+  };
+
+  const handleProfileImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditData(prev => ({
+          ...prev,
+          profileImage: reader.result
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSaveProfile = async () => {
+    setIsLoading(true);
+    try {
+      let token = localStorage.getItem('token') || 
+                 localStorage.getItem('jwt_token') || 
+                 localStorage.getItem('auth_token') ||
+                 localStorage.getItem('authToken');
+
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/updateProfile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: editData.name,
+          username: editData.username,
+          email: editData.email,
+          profileImage: editData.profileImage
+        })
+      });
+
+      if (response.ok) {
+        setProfileData(editData);
+        setIsEditing(false);
+        toast.success('Profile updated successfully!');
+      } else {
+        toast.error('Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Error updating profile');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  // ============= LANDING PAGE FUNCTIONS =============
+
   // Icon rotation effect
   useEffect(() => {
     const interval = setInterval(() => {
@@ -104,7 +242,7 @@ const Landing = () => {
     return () => clearInterval(interval);
   }, [icons.length]);
 
-  // Fetch approved feedbacks from backend
+  // Fetch approved feedbacks
   const fetchApprovedFeedbacks = async () => {
     setIsLoadingFeedbacks(true);
     try {
@@ -114,16 +252,12 @@ const Landing = () => {
         const data = await response.json();
         console.log('✅ Feedbacks received:', data);
 
-        // Sort by createdAt descending (newest first)
         const sortedFeedbacks = data.sort((a, b) => {
           return new Date(b.createdAt) - new Date(a.createdAt);
         });
 
         setAllUserFeedbacks(sortedFeedbacks);
         setFeedbackCount(data.length);
-
-        console.log('✅ Total feedback count:', data.length);
-        console.log('✅ Latest 3 feedbacks:', sortedFeedbacks.slice(0, 3));
       } else {
         console.error('❌ Failed to fetch feedbacks, status:', response.status);
       }
@@ -134,7 +268,7 @@ const Landing = () => {
     }
   };
 
-  // Fetch stats from backend
+  // Fetch stats
   const fetchStats = async () => {
     try {
       console.log('🔍 Fetching stats...');
@@ -153,12 +287,15 @@ const Landing = () => {
     }
   };
 
-  // Initial load - fetch stats and feedbacks
+  // Initial load
   useEffect(() => {
     console.log('🔍 Landing page mounted - fetching initial data');
     fetchStats();
     fetchApprovedFeedbacks();
-  }, []);
+    if (user) {
+      fetchUserData();
+    }
+  }, [user]);
 
   // Listen for feedback submission events
   useEffect(() => {
@@ -204,8 +341,6 @@ const Landing = () => {
     applyTheme(newMode);
   };
 
-  const navigate = useNavigate();
-
   const handleSignIn = () => {
     navigate("/login");
   };
@@ -234,7 +369,6 @@ const Landing = () => {
     setIsSubmittingFeedback(true);
 
     try {
-      console.log('📤 Submitting feedback:', feedbackData);
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/feedback`, {
         method: 'POST',
         headers: {
@@ -256,7 +390,6 @@ const Landing = () => {
           type: 'event',
           rating: 5,
         });
-        // Refresh feedbacks after submission
         await fetchApprovedFeedbacks();
       } else {
         console.error('❌ Feedback submission error:', data);
@@ -286,7 +419,6 @@ const Landing = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
-    // Check if user is logged in with 'jwt_token'
     const token = localStorage.getItem('jwt_token');
 
     if (!token) {
@@ -302,7 +434,7 @@ const Landing = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`, // Include token
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(formData),
       });
@@ -332,7 +464,6 @@ const Landing = () => {
     }
   };
 
-  // Default reviews with types for styling
   const defaultReviews = [
     {
       id: 1,
@@ -421,6 +552,7 @@ const Landing = () => {
             </div>
           </div>
           <div className="navbar-links">
+            {/* DARK MODE TOGGLE */}
             <button
               onClick={toggleDarkMode}
               className="theme-toggle-btn"
@@ -438,15 +570,161 @@ const Landing = () => {
               </div>
             </button>
 
-            <button onClick={handleSignIn} className="nav-button login-btn">
-              Sign In
-            </button>
-            <button onClick={handleCreateAccount} className="nav-button signup-btn">
-              Sign Up
-            </button>
+            {/* USER PROFILE BUTTON - POSITIONED BETWEEN TOGGLE AND SIGN IN */}
+            {user ? (
+              <button 
+                onClick={() => setShowProfileModal(!showProfileModal)}
+                className="profile-button"
+              >
+                {profileData.profileImage ? (
+                  <img src={profileData.profileImage} alt={profileData.name} className="profile-image" />
+                ) : (
+                  <Users className="profile-icon" size={20} />
+                )}
+                <span className="profile-name">{profileData.name || 'User'}</span>
+              </button>
+            ) : null}
+
+            {/* SIGN IN / SIGN UP BUTTONS */}
+            {!user && (
+              <>
+                <button onClick={handleSignIn} className="nav-button login-btn">
+                  Sign In
+                </button>
+                <button onClick={handleCreateAccount} className="nav-button signup-btn">
+                  Sign Up
+                </button>
+              </>
+            )}
           </div>
         </div>
       </nav>
+
+      {/* PROFILE MODAL */}
+      {showProfileModal && user && (
+        <div className="profile-modal-overlay" onClick={() => setShowProfileModal(false)}>
+          <div 
+            className="profile-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {isFetchingProfile ? (
+              <div className="profile-modal-loading">
+                <div className="spinner"></div>
+              </div>
+            ) : (
+              <>
+                {!isEditing ? (
+                  <div className="profile-modal-content">
+                    <div className="profile-modal-header">
+                      {profileData.profileImage ? (
+                        <img src={profileData.profileImage} alt={profileData.name} className="profile-modal-image" />
+                      ) : (
+                        <div className="profile-modal-avatar">
+                          <Users size={40} />
+                        </div>
+                      )}
+                      <h3 className="profile-modal-name">{profileData.name || 'N/A'}</h3>
+                      <p className="profile-modal-username">@{profileData.username || 'N/A'}</p>
+                      <p className="profile-modal-email">{profileData.email || 'N/A'}</p>
+                    </div>
+                    <div className="profile-modal-buttons">
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="profile-modal-btn edit-btn"
+                      >
+                        <Edit2 size={16} />
+                        Edit Profile
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="profile-modal-btn logout-btn"
+                      >
+                        <LogOut size={16} />
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="profile-modal-content">
+                    <h3 className="profile-edit-title">Edit Profile</h3>
+                    
+                    <div className="profile-edit-image">
+                      <label className="profile-edit-label">
+                        {editData.profileImage ? (
+                          <img src={editData.profileImage} alt="profile" className="profile-edit-img" />
+                        ) : (
+                          <div className="profile-edit-placeholder">
+                            <Camera size={32} />
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          onChange={handleProfileImageChange}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="profile-edit-fields">
+                      <input
+                        type="text"
+                        name="name"
+                        value={editData.name}
+                        onChange={handleEditInputChange}
+                        placeholder="Name"
+                        className="profile-edit-input"
+                      />
+                      <input
+                        type="text"
+                        name="username"
+                        value={editData.username}
+                        onChange={handleEditInputChange}
+                        placeholder="Username"
+                        className="profile-edit-input"
+                      />
+                      <input
+                        type="email"
+                        name="email"
+                        value={editData.email}
+                        onChange={handleEditInputChange}
+                        placeholder="Email"
+                        className="profile-edit-input"
+                      />
+                    </div>
+
+                    <div className="profile-edit-actions">
+                      <button
+                        onClick={() => setIsEditing(false)}
+                        className="profile-modal-btn cancel-btn"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSaveProfile}
+                        disabled={isLoading}
+                        className="profile-modal-btn save-btn"
+                      >
+                        {isLoading ? (
+                          <>
+                            <div className="spinner-small"></div>
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Check size={16} />
+                            Save
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       <section className="hero-section">
         <motion.div
@@ -646,7 +924,7 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* REVIEWS SECTION - LATEST 3 FEEDBACKS WITH AUTO-UPDATE */}
+      {/* REVIEWS SECTION */}
       <section className="reviews-section">
         <motion.h2
           className="section-title"
@@ -659,8 +937,8 @@ const Landing = () => {
         </motion.h2>
 
         {isLoadingFeedbacks ? (
-          <div className="flex items-center justify-center h-40">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
+          <div className="reviews-loading">
+            <div className="spinner"></div>
           </div>
         ) : (
           <>
@@ -681,20 +959,19 @@ const Landing = () => {
                       {review.name.split(' ').map(n => n[0]).join('')}
                     </div>
 
-                    {/* Show stars only for user feedbacks */}
                     {allUserFeedbacks.length > 0 && review.rating && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <div className="review-rating">
                         <p className="review-author">{review.name}</p>
-                        <div style={{ display: 'flex', gap: '2px' }}>
+                        <div className="review-stars">
                           {[...Array(review.rating)].map((_, i) => (
-                            <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                            <Star key={i} className="star-icon" size={14} />
                           ))}
                         </div>
                       </div>
                     )}
 
                     {allUserFeedbacks.length === 0 && (
-                      <p className="review-author" style={{ marginBottom: '8px' }}>{review.name}</p>
+                      <p className="review-author">{review.name}</p>
                     )}
 
                     <p className="review-text">{review.message || review.text}</p>
@@ -704,20 +981,9 @@ const Landing = () => {
               })}
             </div>
 
-            {/* SMALL COUNTER - AFTER THE THREE BOXES */}
             {feedbackCount > 0 && (
-              <div style={{ textAlign: 'center', marginTop: '20px' }}>
-                <span
-                  style={{
-                    fontSize: '0.65rem',
-                    backgroundColor: '#ef4444',
-                    color: 'white',
-                    borderRadius: '12px',
-                    padding: '3px 8px',
-                    display: 'inline-block',
-                    fontWeight: 'bold',
-                  }}
-                >
+              <div className="feedback-counter">
+                <span className="feedback-badge">
                   {feedbackCount} total feedback{feedbackCount !== 1 ? 's' : ''}
                 </span>
               </div>
@@ -820,46 +1086,42 @@ const Landing = () => {
         </motion.div>
       </section>
 
-      {/* Feedback Modal (not changed) */}
+      {/* Feedback Modal */}
       {showFeedbackModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-700">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Share Your Feedback</h2>
+        <div className="feedback-modal-overlay">
+          <div className="feedback-modal">
+            <div className="feedback-modal-header">
+              <h2>Share Your Feedback</h2>
               <button
                 onClick={handleSkipFeedback}
-                className="p-1 hover:bg-white/50 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                className="feedback-close-btn"
               >
-                <X className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleFeedbackSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleFeedbackSubmit} className="feedback-form">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Name *
-                </label>
+                <label>Name *</label>
                 <input
                   type="text"
                   name="name"
                   value={feedbackData.name}
                   onChange={handleFeedbackChange}
                   required
-                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Your name"
+                  className="feedback-input"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Type of Feedback *
-                </label>
+                <label>Type of Feedback *</label>
                 <select
                   name="type"
                   value={feedbackData.type}
                   onChange={handleFeedbackChange}
                   required
-                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="feedback-input"
                 >
                   <option value="event">Event</option>
                   <option value="donation">Donation</option>
@@ -868,67 +1130,57 @@ const Landing = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Rating *
-                </label>
-                <div className="flex gap-2">
+                <label>Rating *</label>
+                <div className="feedback-rating">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       type="button"
                       onClick={() => handleFeedbackRating(star)}
-                      className={`transition-all ${
-                        feedbackData.rating >= star
-                          ? 'text-yellow-400'
-                          : 'text-gray-300 dark:text-gray-600'
-                      }`}
+                      className={`feedback-star ${feedbackData.rating >= star ? 'active' : ''}`}
                     >
-                      <Star className="h-6 w-6 fill-current" />
+                      <Star size={20} />
                     </button>
                   ))}
-                  <span className="ml-2 text-gray-600 dark:text-gray-400">
-                    {feedbackData.rating} / 5
-                  </span>
+                  <span className="feedback-rating-text">{feedbackData.rating} / 5</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Your Feedback *
-                </label>
+                <label>Your Feedback *</label>
                 <textarea
                   name="message"
                   value={feedbackData.message}
                   onChange={handleFeedbackChange}
                   required
                   rows="4"
-                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   placeholder="Tell us what you think..."
+                  className="feedback-input"
                 />
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="feedback-buttons">
                 <button
                   type="button"
                   onClick={handleSkipFeedback}
-                  className="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors font-medium"
+                  className="feedback-btn skip-btn"
                 >
                   Skip
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmittingFeedback}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50"
+                  className="feedback-btn submit-btn"
                 >
                   {isSubmittingFeedback ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Submitting...</span>
+                      <div className="spinner-small"></div>
+                      Submitting...
                     </>
                   ) : (
                     <>
-                      <Send className="h-4 w-4" />
-                      <span>Submit</span>
+                      <Send size={16} />
+                      Submit
                     </>
                   )}
                 </button>
