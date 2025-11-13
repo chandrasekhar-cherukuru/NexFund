@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -25,6 +25,7 @@ import java.util.Arrays;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    text
     @Autowired
     private UserDetailsService userDetailsService;
 
@@ -44,14 +45,14 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable()) // CSRF disabled for API endpoints (development/testing)
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/", "/login", "/register", "/error").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
 
-                        // ✅ Public landing & shared data (no login needed)
+                        // Public landing & shared data (no login needed)
                         .requestMatchers(
                                 "/stats",
                                 "/feedback",
@@ -60,10 +61,16 @@ public class SecurityConfig {
                                 "/gifts/allGifts"
                         ).permitAll()
 
-                        // ✅ Profile - Authenticated only
+                        // If you want /api/query to be public, uncomment this line
+                        // .requestMatchers("/api/query").permitAll()
+
+                        // Publicly accessible contact endpoint (if you have one)
+                        // .requestMatchers("/api/contact").permitAll()
+
+                        // Profile - Authenticated only
                         .requestMatchers("/getProfile", "/updateProfile").authenticated()
 
-                        // ✅ Protected modules - require auth
+                        // Protected modules - require auth
                         .requestMatchers("/events/**", "/gifts/**", "/donations/**", "/participants/**", "/api/upi/**").authenticated()
 
                         // Everything else defaults to auth
@@ -71,16 +78,15 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // ✅ OAuth2 login setup
+                // OAuth2 login setup
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oauth2AuthenticationSuccessHandler)
                         // failure redirect to your live frontend
-                        //.failureUrl("http://nexfund-frontend-bucket.s3-website.ap-south-1.amazonaws.com/?error=oauth2_failed") // old
-                        .failureUrl("https://www.nexfund.site/?error=oauth2_failed") // new updated production URL
+                        .failureUrl("https://www.nexfund.site/?error=oauth2_failed")
                 )
 
-                // ✅ Add JWT filter before username/password auth
+                // Add JWT filter before username/password auth
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -99,25 +105,15 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    // Updated CORS configurations with previous commented out
+    // Centralized CORS configuration
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Old CORS config - commented out
-        /*
-        configuration.setAllowedOriginPatterns(Arrays.asList(
-                "http://localhost:3000",
-                "http://localhost:8080",
-                "http://nexfund-frontend-bucket.s3-website.ap-south-1.amazonaws.com",
-                "https://nexfund-frontend-bucket.s3-website.ap-south-1.amazonaws.com"
-        ));
-        */
-
-        // New CORS config for production + optional local dev
+        // Public origins (adjust as needed)
         configuration.setAllowedOriginPatterns(Arrays.asList(
                 "https://www.nexfund.site",
-                "http://localhost:3000" // Optional - remove if you don't want local dev access
+                "http://localhost:3000" // Optional - local development
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
@@ -128,4 +124,3 @@ public class SecurityConfig {
         return source;
     }
 }
-
