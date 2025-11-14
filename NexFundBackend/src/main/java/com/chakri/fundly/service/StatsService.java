@@ -18,23 +18,24 @@ public class StatsService {
     @PostConstruct
     public void init() {
         try {
-            // Check if stats exists, if not create it
-            if (!statsRepo.existsById(STATS_ID)) {
-                Stats stats = new Stats();
-                stats.setId(STATS_ID);
-                stats.setEventCount(0L);
-                stats.setDonationCount(0L);
-                stats.setGiftPoolCount(0L);
-                statsCache = statsRepo.save(stats);
-                System.out.println("✅ Stats initialized");
-            } else {
-                // Load existing stats
-                statsCache = statsRepo.findById(STATS_ID).orElse(null);
-                System.out.println("✅ Stats loaded from database");
+            if (statsCache == null) {  // only init if cache is empty
+                if (!statsRepo.existsById(STATS_ID)) {
+                    Stats stats = new Stats();
+                    stats.setId(STATS_ID);
+                    stats.setEventCount(0L);
+                    stats.setDonationCount(0L);
+                    stats.setGiftPoolCount(0L);
+                    statsCache = statsRepo.save(stats);
+                    System.out.println("✅ Stats initialized");
+                } else {
+                    statsCache = statsRepo.findById(STATS_ID).orElseThrow(() ->
+                            new IllegalStateException("Stats entity missing after existsById check"));
+                    System.out.println("✅ Stats loaded from database");
+                }
             }
         } catch (Exception e) {
             System.err.println("❌ Error initializing stats: " + e.getMessage());
-            // Create default stats in memory if database fails
+            // Initialize in-memory default if DB fails but warn it's not persistent
             statsCache = new Stats();
             statsCache.setId(STATS_ID);
             statsCache.setEventCount(0L);
@@ -43,59 +44,60 @@ public class StatsService {
         }
     }
 
-    public Stats getStats() {
+    public synchronized Stats getStats() {
         try {
-            Stats stats = statsRepo.findById(STATS_ID).orElse(null);
-            if (stats != null) {
-                statsCache = stats;
-                return stats;
+            if (statsCache == null) {
+                statsCache = statsRepo.findById(STATS_ID).orElse(null);
+                if (statsCache == null) {
+                    System.out.println("⚠️ Stats missing in DB, initializing new stats");
+                    statsCache = new Stats();
+                    statsCache.setId(STATS_ID);
+                    statsCache.setEventCount(0L);
+                    statsCache.setDonationCount(0L);
+                    statsCache.setGiftPoolCount(0L);
+                    statsCache = statsRepo.save(statsCache);
+                }
             }
+            return statsCache;
         } catch (Exception e) {
             System.err.println("❌ Error fetching stats: " + e.getMessage());
+            // Return cached or new default
+            if (statsCache == null) {
+                statsCache = new Stats();
+                statsCache.setId(STATS_ID);
+            }
+            return statsCache;
         }
-
-        // Return cached or create new
-        if (statsCache == null) {
-            statsCache = new Stats();
-            statsCache.setId(STATS_ID);
-        }
-        return statsCache;
     }
 
-    public void incrementEventCount() {
+    public synchronized void incrementEventCount() {
         try {
             Stats stats = getStats();
-            if (stats != null) {
-                stats.setEventCount(stats.getEventCount() + 1);
-                statsCache = statsRepo.save(stats);
-                System.out.println("✅ Event count incremented: " + stats.getEventCount());
-            }
+            stats.setEventCount(stats.getEventCount() + 1);
+            statsCache = statsRepo.save(stats);
+            System.out.println("✅ Event count incremented: " + stats.getEventCount());
         } catch (Exception e) {
             System.err.println("❌ Error incrementing event count: " + e.getMessage());
         }
     }
 
-    public void incrementDonationCount() {
+    public synchronized void incrementDonationCount() {
         try {
             Stats stats = getStats();
-            if (stats != null) {
-                stats.setDonationCount(stats.getDonationCount() + 1);
-                statsCache = statsRepo.save(stats);
-                System.out.println("✅ Donation count incremented: " + stats.getDonationCount());
-            }
+            stats.setDonationCount(stats.getDonationCount() + 1);
+            statsCache = statsRepo.save(stats);
+            System.out.println("✅ Donation count incremented: " + stats.getDonationCount());
         } catch (Exception e) {
             System.err.println("❌ Error incrementing donation count: " + e.getMessage());
         }
     }
 
-    public void incrementGiftPoolCount() {
+    public synchronized void incrementGiftPoolCount() {
         try {
             Stats stats = getStats();
-            if (stats != null) {
-                stats.setGiftPoolCount(stats.getGiftPoolCount() + 1);
-                statsCache = statsRepo.save(stats);
-                System.out.println("✅ Gift Pool count incremented: " + stats.getGiftPoolCount());
-            }
+            stats.setGiftPoolCount(stats.getGiftPoolCount() + 1);
+            statsCache = statsRepo.save(stats);
+            System.out.println("✅ Gift Pool count incremented: " + stats.getGiftPoolCount());
         } catch (Exception e) {
             System.err.println("❌ Error incrementing gift pool count: " + e.getMessage());
         }

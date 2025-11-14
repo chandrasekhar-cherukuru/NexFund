@@ -2705,3 +2705,12 @@ html.light .feedback-star {
     max-width: 100%;
   }
 }
+.footer {
+  text-align: center;
+  padding: 12px 0;
+  font-size: 0.9rem;
+  color: #666;
+  border-top: 1px solid #ddd;
+  margin-top: 2rem;
+  background-color: var(--background-footer, #f9f9f9);
+}

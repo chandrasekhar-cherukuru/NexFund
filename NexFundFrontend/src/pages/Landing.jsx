@@ -1165,6 +1165,9 @@ const Landing = () => {
           </div>
         </div>
       )}
+       <footer className="footer">
+    <p>© {new Date().getFullYear()} NexFund. All rights reserved.</p>
+  </footer>
     </div>
   );
 };
