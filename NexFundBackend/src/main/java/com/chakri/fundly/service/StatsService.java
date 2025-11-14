@@ -18,7 +18,7 @@ public class StatsService {
     @PostConstruct
     public void init() {
         try {
-            if (statsCache == null) {  // only init if cache is empty
+            if (statsCache == null) {
                 if (!statsRepo.existsById(STATS_ID)) {
                     Stats stats = new Stats();
                     stats.setId(STATS_ID);
@@ -35,7 +35,6 @@ public class StatsService {
             }
         } catch (Exception e) {
             System.err.println("❌ Error initializing stats: " + e.getMessage());
-            // Initialize in-memory default if DB fails but warn it's not persistent
             statsCache = new Stats();
             statsCache.setId(STATS_ID);
             statsCache.setEventCount(0L);
@@ -47,24 +46,29 @@ public class StatsService {
     public synchronized Stats getStats() {
         try {
             if (statsCache == null) {
-                statsCache = statsRepo.findById(STATS_ID).orElse(null);
-                if (statsCache == null) {
+                Stats stats = statsRepo.findById(STATS_ID).orElse(null);
+                if (stats != null) {
+                    statsCache = stats;
+                    return stats;
+                } else {
                     System.out.println("⚠️ Stats missing in DB, initializing new stats");
                     statsCache = new Stats();
                     statsCache.setId(STATS_ID);
                     statsCache.setEventCount(0L);
                     statsCache.setDonationCount(0L);
                     statsCache.setGiftPoolCount(0L);
-                    statsCache = statsRepo.save(statsCache);
+                    return statsCache;
                 }
             }
             return statsCache;
         } catch (Exception e) {
             System.err.println("❌ Error fetching stats: " + e.getMessage());
-            // Return cached or new default
             if (statsCache == null) {
                 statsCache = new Stats();
                 statsCache.setId(STATS_ID);
+                statsCache.setEventCount(0L);
+                statsCache.setDonationCount(0L);
+                statsCache.setGiftPoolCount(0L);
             }
             return statsCache;
         }
@@ -73,9 +77,11 @@ public class StatsService {
     public synchronized void incrementEventCount() {
         try {
             Stats stats = getStats();
-            stats.setEventCount(stats.getEventCount() + 1);
-            statsCache = statsRepo.save(stats);
-            System.out.println("✅ Event count incremented: " + stats.getEventCount());
+            if (stats != null) {
+                stats.setEventCount(stats.getEventCount() + 1);
+                statsCache = statsRepo.save(stats);
+                System.out.println("✅ Event count incremented: " + stats.getEventCount());
+            }
         } catch (Exception e) {
             System.err.println("❌ Error incrementing event count: " + e.getMessage());
         }
@@ -84,9 +90,11 @@ public class StatsService {
     public synchronized void incrementDonationCount() {
         try {
             Stats stats = getStats();
-            stats.setDonationCount(stats.getDonationCount() + 1);
-            statsCache = statsRepo.save(stats);
-            System.out.println("✅ Donation count incremented: " + stats.getDonationCount());
+            if (stats != null) {
+                stats.setDonationCount(stats.getDonationCount() + 1);
+                statsCache = statsRepo.save(stats);
+                System.out.println("✅ Donation count incremented: " + stats.getDonationCount());
+            }
         } catch (Exception e) {
             System.err.println("❌ Error incrementing donation count: " + e.getMessage());
         }
@@ -95,9 +103,11 @@ public class StatsService {
     public synchronized void incrementGiftPoolCount() {
         try {
             Stats stats = getStats();
-            stats.setGiftPoolCount(stats.getGiftPoolCount() + 1);
-            statsCache = statsRepo.save(stats);
-            System.out.println("✅ Gift Pool count incremented: " + stats.getGiftPoolCount());
+            if (stats != null) {
+                stats.setGiftPoolCount(stats.getGiftPoolCount() + 1);
+                statsCache = statsRepo.save(stats);
+                System.out.println("✅ Gift Pool count incremented: " + stats.getGiftPoolCount());
+            }
         } catch (Exception e) {
             System.err.println("❌ Error incrementing gift pool count: " + e.getMessage());
         }

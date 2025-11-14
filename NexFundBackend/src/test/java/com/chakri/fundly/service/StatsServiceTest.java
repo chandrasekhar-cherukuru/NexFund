@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.Field;
 import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,6 +35,17 @@ class StatsServiceTest {
         testStats.setEventCount(0L);
         testStats.setDonationCount(0L);
         testStats.setGiftPoolCount(0L);
+        clearServiceCache();
+    }
+
+    private void clearServiceCache() {
+        try {
+            Field cacheField = StatsService.class.getDeclaredField("statsCache");
+            cacheField.setAccessible(true);
+            cacheField.set(statsService, null);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            // Ignore
+        }
     }
 
     @Test
@@ -61,22 +73,32 @@ class StatsServiceTest {
         verify(statsRepo, times(1)).existsById(1L);
         verify(statsRepo, times(1)).findById(1L);
         verify(statsRepo, never()).save(any(Stats.class));
-        assertNotNull(statsService.getStats());
-        assertEquals(5L, statsService.getStats().getEventCount());
-        assertEquals(3L, statsService.getStats().getDonationCount());
-        assertEquals(2L, statsService.getStats().getGiftPoolCount());
+        Stats result = statsService.getStats();
+        assertNotNull(result);
+        assertEquals(5L, result.getEventCount());
+        assertEquals(3L, result.getDonationCount());
+        assertEquals(2L, result.getGiftPoolCount());
     }
 
     @Test
-    public void testInit_WhenStatsExists_ButFindByIdReturnsEmpty_ShouldHandleGracefully() {
+    public void testInit_WhenStatsExists_ButFindByIdReturnsEmpty_ShouldInitializeDefaultStats() {
         when(statsRepo.existsById(1L)).thenReturn(true);
         when(statsRepo.findById(1L)).thenReturn(Optional.empty());
+
         statsService.init();
+
         verify(statsRepo, times(1)).existsById(1L);
         verify(statsRepo, times(1)).findById(1L);
-        assertNotNull(statsService.getStats());
-        assertEquals(1L, statsService.getStats().getId());
+
+        Stats stats = statsService.getStats();
+        assertNotNull(stats);
+        assertEquals(1L, stats.getId());
+        assertEquals(0L, stats.getEventCount());
+        assertEquals(0L, stats.getDonationCount());
+        assertEquals(0L, stats.getGiftPoolCount());
     }
+
+
 
     @Test
     public void testInit_WhenExceptionOccursDuringCheck_ShouldCreateDefaultStatsInMemory() {
@@ -113,19 +135,22 @@ class StatsServiceTest {
     }
 
     @Test
-    public void testGetStats_WhenStatsDoesNotExistInDatabase_ShouldReturnCachedStats() {
+    public void testGetStats_WhenStatsDoesNotExistInDatabase_ShouldReturnDefaultStats() {
         when(statsRepo.findById(1L)).thenReturn(Optional.empty());
         Stats result = statsService.getStats();
         verify(statsRepo, times(1)).findById(1L);
         assertNotNull(result);
+        assertEquals(1L, result.getId());
+        assertEquals(0L, result.getEventCount());
     }
 
     @Test
-    public void testGetStats_WhenExceptionThrown_ShouldReturnCachedStats() {
+    public void testGetStats_WhenExceptionThrown_ShouldReturnDefaultStats() {
         when(statsRepo.findById(1L)).thenThrow(new RuntimeException("Database connection error"));
         Stats result = statsService.getStats();
         verify(statsRepo, times(1)).findById(1L);
         assertNotNull(result);
+        assertEquals(1L, result.getId());
     }
 
     @Test
@@ -134,6 +159,7 @@ class StatsServiceTest {
         Stats result = statsService.getStats();
         assertNotNull(result);
         assertEquals(1L, result.getId());
+        assertEquals(0L, result.getEventCount());
     }
 
     @Test
@@ -142,7 +168,7 @@ class StatsServiceTest {
         Stats result1 = statsService.getStats();
         Stats result2 = statsService.getStats();
         assertEquals(result1.getId(), result2.getId());
-        verify(statsRepo, times(2)).findById(1L);
+        verify(statsRepo, times(1)).findById(1L);
     }
 
     @Test
@@ -347,7 +373,7 @@ class StatsServiceTest {
         Stats result = statsService.getStats();
         assertNotNull(result);
         verify(statsRepo, atLeast(1)).existsById(1L);
-        verify(statsRepo, atLeast(4)).findById(1L);
+        verify(statsRepo, times(1)).findById(1L);
         verify(statsRepo, times(3)).save(any(Stats.class));
     }
 
@@ -389,6 +415,7 @@ class StatsServiceTest {
         statsService.incrementEventCount();
         Stats cachedStats = statsService.getStats();
         assertEquals(3L, cachedStats.getEventCount());
+        verify(statsRepo, times(1)).findById(1L);
     }
 
     @Test
@@ -419,6 +446,7 @@ class StatsServiceTest {
         when(statsRepo.findById(1L)).thenThrow(new RuntimeException("Database error"));
         statsService.init();
         assertNotNull(statsService.getStats());
+        assertEquals(1L, statsService.getStats().getId());
     }
 
     @Test
@@ -431,6 +459,7 @@ class StatsServiceTest {
         Stats result2 = statsService.getStats();
         assertEquals(10L, result1.getEventCount());
         assertEquals(10L, result2.getEventCount());
+        verify(statsRepo, times(1)).findById(1L);
     }
 
     @Test
