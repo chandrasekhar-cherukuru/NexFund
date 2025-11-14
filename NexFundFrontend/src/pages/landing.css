@@ -2048,7 +2048,7 @@ html.light .feature-description {
     font-size: 13px;
   }
 }
-/* ============= PROFILE BUTTON & MODAL STYLES ============= */
+/* ============= PROFILE BUTTON STYLES - NEW ============= */
 .profile-button {
   display: flex;
   align-items: center;
@@ -2071,6 +2071,16 @@ html.light .feature-description {
   transform: translateY(-2px);
 }
 
+.profile-button.logged-out {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.profile-button.logged-out:hover {
+  opacity: 0.8;
+  transform: none;
+}
+
 .profile-image {
   width: 28px;
   height: 28px;
@@ -2090,6 +2100,7 @@ html.light .feature-description {
   text-overflow: ellipsis;
 }
 
+/* ============= PROFILE MODAL OVERLAY & MODAL ============= */
 .profile-modal-overlay {
   position: fixed;
   inset: 0;
@@ -2173,12 +2184,12 @@ html.light .feature-description {
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--accent-blue);
-}
-
-.profile-modal-avatar {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.profile-modal-avatar {
   background: rgba(59, 130, 246, 0.1);
   color: var(--accent-blue);
 }
@@ -2298,15 +2309,12 @@ html.light .feature-description {
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--border);
-  transition: all 0.3s ease;
-}
-
-.profile-edit-placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(59, 130, 246, 0.05);
   color: var(--accent-blue);
+  transition: all 0.3s ease;
 }
 
 .profile-edit-label:hover .profile-edit-placeholder {
@@ -2351,11 +2359,237 @@ html.light .feature-description {
   flex: 1;
 }
 
-.hidden {
-  display: none;
+/* ============= REVIEW RATING & STARS ============= */
+.review-rating {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 8px;
 }
 
-/* LIGHT MODE */
+.review-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.star-icon {
+  fill: #fbbf24;
+  color: #fbbf24;
+}
+
+/* ============= FEEDBACK COUNTER ============= */
+.feedback-counter {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.feedback-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  background: var(--accent-red);
+  color: white;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ============= REVIEWS LOADING ============= */
+.reviews-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+/* ============= FEEDBACK MODAL ============= */
+.feedback-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.feedback-modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.feedback-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(168, 85, 247, 0.1));
+}
+
+.feedback-modal-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+  margin: 0;
+}
+
+.feedback-close-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.3s ease;
+  border-radius: 6px;
+}
+
+.feedback-close-btn:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent-blue);
+}
+
+.feedback-form {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.feedback-form > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.feedback-form label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+}
+
+.feedback-input {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.05);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  transition: all 0.3s ease;
+}
+
+.feedback-input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  background: rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.feedback-input::placeholder {
+  color: var(--text-muted);
+}
+
+.feedback-rating {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.feedback-star {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.3s ease;
+}
+
+.feedback-star:hover {
+  border-color: #fbbf24;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.feedback-star.active {
+  color: #fbbf24;
+  border-color: #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+}
+
+.feedback-rating-text {
+  margin-left: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.feedback-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.feedback-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-body);
+}
+
+.skip-btn {
+  background: rgba(107, 114, 128, 0.1);
+  color: var(--text-secondary);
+}
+
+.skip-btn:hover {
+  background: var(--border);
+}
+
+.submit-btn {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border-color: #10b981;
+}
+
+.submit-btn:hover {
+  background: #10b981;
+  color: white;
+  border-color: #10b981;
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============= LIGHT MODE - PROFILE & FEEDBACK ============= */
 html.light .profile-button {
   background: rgba(59, 130, 246, 0.1);
   border-color: rgba(59, 130, 246, 0.3);
@@ -2386,7 +2620,37 @@ html.light .profile-edit-input:focus {
   border-color: #3b82f6;
 }
 
-/* RESPONSIVE */
+html.light .feedback-modal {
+  background: white;
+  border-color: #e5e7eb;
+}
+
+html.light .feedback-modal-header {
+  border-color: #e5e7eb;
+  background: rgba(59, 130, 246, 0.05);
+}
+
+html.light .feedback-modal-header h2 {
+  color: #111827;
+}
+
+html.light .feedback-input {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #111827;
+}
+
+html.light .feedback-input:focus {
+  background: white;
+  border-color: #3b82f6;
+}
+
+html.light .feedback-star {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+}
+
+/* ============= RESPONSIVE ============= */
 @media (max-width: 768px) {
   .profile-button {
     padding: 6px 10px;
@@ -2431,5 +2695,13 @@ html.light .profile-edit-input:focus {
   .profile-modal {
     width: calc(100% - 20px);
     max-width: 320px;
+  }
+
+  .feedback-modal-overlay {
+    padding: 10px;
+  }
+
+  .feedback-modal {
+    max-width: 100%;
   }
 }
