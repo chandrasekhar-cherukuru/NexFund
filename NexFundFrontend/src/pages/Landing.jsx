@@ -5,7 +5,7 @@ import { Gift, Calendar, Heart, Moon, Sun, Zap, Users, CheckCircle, Mail, Smile,
 import './landing.css';
 import toast from 'react-hot-toast';
 import { useNavigate } from "react-router-dom";
-import { useAuth } from '../contexts/AuthContext';
+// import { useAuth } from '../contexts/AuthContext';
 import { LogOut, Camera, Edit2, Check } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
