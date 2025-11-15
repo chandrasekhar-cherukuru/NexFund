@@ -7,6 +7,13 @@ import Navbar from '../Layout/Navbar';
 import toast from 'react-hot-toast';
 import * as api from '../../services/api.js';
 
+function getShortDescription(desc = '', wordLimit = 7) {
+  const words = desc ? desc.split(' ').filter(Boolean) : [];
+  if (words.length <= wordLimit) return desc;
+  return words.slice(0, wordLimit).join(' ') + '...';
+}
+
+
 const Dashboard = () => {
   const { user } = useAuth();
   const { getUserFundraisers, deleteFundraiser } = useData();
@@ -332,7 +339,10 @@ const Dashboard = () => {
                               <span className="ml-2 w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full" title="Live data loaded"></span>
                             )}
                           </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">{fundraiser.description}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+  {getShortDescription(fundraiser.description, 7)}
+</div>
+
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
