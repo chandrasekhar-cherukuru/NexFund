@@ -1,7 +1,7 @@
 // src/pages/Landing.jsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Gift, Calendar, Heart, Moon, Sun, Zap, Users, CheckCircle, Mail, Smile, Link2, Star, Send, X, LogOut, Camera, Edit2, Check } from 'lucide-react';
+import { Gift, Calendar, Heart, Moon, Sun, Zap, Users, CheckCircle, Mail, Smile, Link2, Star, Send, X, LogOut, Camera, Edit2, Check, User } from 'lucide-react';
 import './landing.css';
 import toast from 'react-hot-toast';
 import { useNavigate } from "react-router-dom";
@@ -544,22 +544,22 @@ const Landing = () => {
                 />
               </div>
             </button>
+{/* USER PROFILE BUTTON - ALWAYS VISIBLE */}
+<button 
+  onClick={() => user && setShowProfileModal(!showProfileModal)}
+  className={`profile-button ${user ? 'logged-in' : 'logged-out'}`}
+  title={user ? 'View profile' : 'Login to view profile'}
+>
+  {profileData.profileImage && user ? (
+    <img src={profileData.profileImage} alt={profileData.name} className="profile-image" />
+  ) : (
+    <User className="profile-icon" size={20} />
+  )}
+  <span className="profile-name">
+    {user ? profileData.name || 'Profile' : 'Profile'}
+  </span>
+</button>
 
-            {/* USER PROFILE BUTTON - ALWAYS VISIBLE */}
-            <button 
-              onClick={() => user && setShowProfileModal(!showProfileModal)}
-              className={`profile-button ${user ? 'logged-in' : 'logged-out'}`}
-              title={user ? 'View profile' : 'Login to view profile'}
-            >
-              {profileData.profileImage && user ? (
-                <img src={profileData.profileImage} alt={profileData.name} className="profile-image" />
-              ) : (
-                <Users className="profile-icon" size={20} />
-              )}
-              <span className="profile-name">
-                {user ? profileData.name || 'User' : 'User'}
-              </span>
-            </button>
 
             {/* SIGN IN / SIGN UP BUTTONS - ONLY SHOW WHEN NOT LOGGED IN */}
             {!user && (
