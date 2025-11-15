@@ -28,6 +28,7 @@ public class StatsService {
                     statsCache = statsRepo.save(stats);
                     System.out.println("✅ Stats initialized");
                 } else {
+                    // Throws if stats does not exist despite existsById true, to catch inconsistent DB state
                     statsCache = statsRepo.findById(STATS_ID).orElseThrow(() ->
                             new IllegalStateException("Stats entity missing after existsById check"));
                     System.out.println("✅ Stats loaded from database");
@@ -35,6 +36,7 @@ public class StatsService {
             }
         } catch (Exception e) {
             System.err.println("❌ Error initializing stats: " + e.getMessage());
+            // Fallback to always having in-memory default stats
             statsCache = new Stats();
             statsCache.setId(STATS_ID);
             statsCache.setEventCount(0L);
@@ -49,7 +51,7 @@ public class StatsService {
                 Stats stats = statsRepo.findById(STATS_ID).orElse(null);
                 if (stats != null) {
                     statsCache = stats;
-                    return stats;
+                    return statsCache;
                 } else {
                     System.out.println("⚠️ Stats missing in DB, initializing new stats");
                     statsCache = new Stats();
@@ -78,6 +80,7 @@ public class StatsService {
         try {
             Stats stats = getStats();
             if (stats != null) {
+                // Safe increment with overflow handling optional
                 stats.setEventCount(stats.getEventCount() + 1);
                 statsCache = statsRepo.save(stats);
                 System.out.println("✅ Event count incremented: " + stats.getEventCount());
